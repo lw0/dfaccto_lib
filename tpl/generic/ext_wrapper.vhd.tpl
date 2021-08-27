@@ -1,7 +1,8 @@
-{{>vhdl/dependenecies.part.tpl}}
+{{>vhdl/dependencies.part.tpl}}
 
 
 entity {{identifier}} is
+  {{>vhdl/defgenerics.part.tpl}}
 {{?ports}}
   port (
 {{# ports}}
@@ -38,7 +39,6 @@ begin
   {{>vhdl/instance.part.tpl}}
 
 {{/instances}}
-
 
   -- Port Mapping:
 

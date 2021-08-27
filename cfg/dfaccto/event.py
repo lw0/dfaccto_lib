@@ -22,8 +22,6 @@ def _TypeEvent(ctx, name, stb_bits=None, ack_bits=None):
         x_format_sm=ctx.Part('types/format/event_sm.part.tpl'),
         x_wrapeport=ctx.Part('types/wrapeport/event.part.tpl'),
         x_wrapeconv=ctx.Part('types/wrapeconv/event.part.tpl'),
-        x_wrapidefs=ctx.Part('types/wrapidefs/event.part.tpl'),
-        x_wrapiconv=ctx.Part('types/wrapiconv/event.part.tpl'),
         x_wrapipmap=ctx.Part('types/wrapipmap/event.part.tpl'),
         x_wrapigmap=None,
         x_tlogic=tlogic, x_tsdata=tsdata, x_tadata=tadata,

@@ -1,12 +1,12 @@
 type {{.identifier_ms}} is record
-  addr : {{.x_tRegAddr.qualified}};
-  wrdata : {{.x_tRegData.qualified}};
-  wrstrb : {{.x_tRegStrb.qualified}};
+  addr : {{.x_taddr.qualified}};
+  wrdata : {{.x_tdata.qualified}};
+  wrstrb : {{.x_tstrb.qualified}};
   wrnotrd : {{.x_tlogic.qualified}};
   valid : {{.x_tlogic.qualified}};
 end record;
 type {{identifier_sm}} is record
-  rddata : {{.x_tRegData.qualified}};
+  rddata : {{.x_tdata.qualified}};
   ready : {{.x_tlogic.qualified}};
 end record;
 type {{.identifier_v_ms}} is array (integer range <>) of {{.qualified_ms}};

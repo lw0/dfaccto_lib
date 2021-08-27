@@ -7,10 +7,7 @@
 architecture IntWrapper of {{identifier}} is
 
 {{#ports}}
-{{? .is_scalar}}
-  -- {{name}}
-  {{*.type.x_wrapidefs}}
-{{| .is_scalar}}
+{{^ .is_scalar}}
   report "InternalWrapper can not wrap vector port {{name}}" severity failure;
 {{/ .is_scalar}}
 {{/ports}}
@@ -31,13 +28,6 @@ begin
 {{#ports}}
       -- {{name}}
       {{*.type.x_wrapipmap}}{{?._last}});{{|._last}},{{/._last}}
-{{/ports}}
-
-  -- Port Mapping:
-
-{{#ports}}
-  -- {{name}}
-  {{*.type.x_wrapiconv}}
 {{/ports}}
 
 end IntWrapper;

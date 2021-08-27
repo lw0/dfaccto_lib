@@ -1,1 +1,1 @@
-{{.x_wrapname}} => {{.x_wrapname}}
+{{.x_wrapname}} => {{.identifier}}

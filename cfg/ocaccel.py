@@ -88,8 +88,6 @@ class _OCAccelEnv(ModuleContext):
           x_format_sm=self.Part('types/format/interrupt_sm.part.tpl'),
           x_wrapeport=self.Part('types/wrapeport/interrupt.part.tpl'),
           x_wrapeconv=self.Part('types/wrapeconv/interrupt.part.tpl'),
-          x_wrapidefs=self.Part('types/wrapidefs/interrupt.part.tpl'),
-          x_wrapiconv=self.Part('types/wrapiconv/interrupt.part.tpl'),
           x_wrapipmap=self.Part('types/wrapipmap/interrupt.part.tpl'),
           x_wrapigmap=None,
           x_tlogic=self.tlogic,

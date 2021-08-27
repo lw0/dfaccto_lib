@@ -1,9 +1,24 @@
-{{.x_wrapname}}_address     => {{.x_wrapname}}_address,
-{{.x_wrapname}}_req_din     => {{.x_wrapname}}_req_din,
-{{.x_wrapname}}_size        => {{.x_wrapname}}_size,
-{{.x_wrapname}}_dataout     => {{.x_wrapname}}_dataout,
-{{.x_wrapname}}_req_full_n  => {{.x_wrapname}}_req_full_n,
-{{.x_wrapname}}_req_write   => {{.x_wrapname}}_req_write,
-{{.x_wrapname}}_datain      => {{.x_wrapname}}_datain,
-{{.x_wrapname}}_rsp_empty_n => {{.x_wrapname}}_rsp_empty_n,
-{{.x_wrapname}}_rsp_read    => {{.x_wrapname}}_rsp_read
+{{?.is_ms_input}}
+{{.x_wrapname}}_address => std_logic_vector({{.identifier_ms}}.req_addr),
+{{.x_wrapname}}_req_din => {{.identifier_ms}}.req_write,
+{{.x_wrapname}}_size => std_logic_vector({{.identifier_ms}}.req_size),
+{{.x_wrapname}}_dataout => std_logic_vector({{.identifier_ms}}.req_wdata),
+{{.x_wrapname}}_req_write => {{.identifier_ms}}.req_strobe,
+{{.x_wrapname}}_rsp_read => {{.identifier_ms}}.rsp_strobe,
+{{|.is_ms_input}}
+{{.type.x_taddr.qualified}}({{.x_wrapname}}_address) => {{.identifier_ms}}.req_addr,
+{{.x_wrapname}}_req_din => {{.identifier_ms}}.req_write,
+{{.type.x_tsize.qualified}}({{.x_wrapname}}_size) => {{.identifier_ms}}.req_size,
+{{.type.x_tdata.qualified}}({{.x_wrapname}}_dataout) => {{.identifier_ms}}.req_wdata,
+{{.x_wrapname}}_req_write => {{.identifier_ms}}.req_strobe,
+{{.x_wrapname}}_rsp_read => {{.identifier_ms}}.rsp_strobe,
+{{/.is_ms_input}}
+{{?.is_sm_input}}
+{{.x_wrapname}}_req_full_n => {{.identifier_sm}}.req_ready,
+{{.x_wrapname}}_datain => std_logic_vector({{.identifier_sm}}.rsp_rdata),
+{{.x_wrapname}}_rsp_empty_n => {{.identifier_sm}}.rsp_ready
+{{|.is_sm_input}}
+{{.x_wrapname}}_req_full_n => {{.identifier_sm}}.req_ready,
+{{.type.x_tdata.qualified}}({{.x_wrapname}}_datain) => {{.identifier_sm}}.rsp_rdata,
+{{.x_wrapname}}_rsp_empty_n => {{.identifier_sm}}.rsp_ready
+{{/.is_sm_input}}

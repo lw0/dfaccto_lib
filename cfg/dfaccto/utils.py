@@ -27,8 +27,6 @@ def _TypeInteger(ctx, name, min=None, max=None):
       x_format=ctx.Part('types/format/integer.part.tpl'),
       x_wrapeport=None,
       x_wrapeconv=None,
-      x_wrapidefs=None,
-      x_wrapiconv=None,
       x_wrapipmap=None,
       x_wrapigmap=None,
       x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit(0)))
@@ -43,8 +41,6 @@ def _TypeUnsigned(ctx, name, width, **directives):
       x_format=ctx.Part('types/format/unsigned.part.tpl'),
       x_wrapeport=ctx.Part('types/wrapeport/unsigned.part.tpl'),
       x_wrapeconv=ctx.Part('types/wrapeconv/unsigned.part.tpl'),
-      x_wrapidefs=ctx.Part('types/wrapidefs/unsigned.part.tpl'),
-      x_wrapiconv=ctx.Part('types/wrapiconv/unsigned.part.tpl'),
       x_wrapipmap=ctx.Part('types/wrapipmap/unsigned.part.tpl'),
       x_wrapigmap=None,
       x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit(0)),
