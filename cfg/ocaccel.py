@@ -82,7 +82,7 @@ class _OCAccelEnv(ModuleContext):
 
       self.tisrc = TypeUnsigned('InterruptSrc', width=self.InterruptBits)
 
-      self.tintr = TypeC('Interrupt',
+      self.tintr = TypeC('Interrupt', x_is_interrupt=True,
           x_definition=self.Part('types/definition/interrupt.part.tpl'),
           x_format_ms=self.Part('types/format/interrupt_ms.part.tpl'),
           x_format_sm=self.Part('types/format/interrupt_sm.part.tpl'),

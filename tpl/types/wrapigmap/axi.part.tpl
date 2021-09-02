@@ -10,25 +10,31 @@ c_{{.x_wrapname}}_prot_value => {{.x_prot_value}},
 {{?.x_cache_value}}
 c_{{.x_wrapname}}_cache_value => {{.x_cache_value}},
 {{/.x_cache_value}}
-{{?.type.x_has_wr}}
+{{?.type.x_has_aw}}
 {{? .type.x_tawuser}}
 c_{{.x_wrapname}}_awuser_width => {{.type.x_tawuser.x_width}},
 {{/ .type.x_tawuser}}
+{{/.type.x_has_aw}}
+{{?.type.x_has_w}}
 {{? .type.x_twuser}}
 c_{{.x_wrapname}}_wuser_width => {{.type.x_twuser.x_width}},
 {{/ .type.x_twuser}}
+{{/.type.x_has_w}}
+{{?.type.x_has_b}}
 {{? .type.x_tbuser}}
 c_{{.x_wrapname}}_buser_width => {{.type.x_tbuser.x_width}},
 {{/ .type.x_tbuser}}
-{{/.type.x_has_wr}}
-{{?.type.x_has_rd}}
+{{/.type.x_has_b}}
+{{?.type.x_has_ar}}
 {{? .type.x_taruser}}
 c_{{.x_wrapname}}_aruser_width => {{.type.x_taruser.x_width}},
 {{/ .type.x_taruser}}
+{{/.type.x_has_ar}}
+{{?.type.x_has_r}}
 {{? .type.x_truser}}
 c_{{.x_wrapname}}_ruser_width => {{.type.x_truser.x_width}},
 {{/ .type.x_truser}}
-{{/.type.x_has_rd}}
+{{/.type.x_has_r}}
 {{?.type.x_tid}}
 c_{{.x_wrapname}}_id_width => {{.type.x_tid.x_width}},
 {{/.type.x_tid}}

@@ -6,6 +6,8 @@ Inc('dfaccto/event.py', abs=True)
 Inc('dfaccto/hls.py', abs=True)
 Inc('dfaccto/reg.py', abs=True)
 
+Inc('dfaccto/entaxi.py', abs=True)
+
 
 # p=Pkg('builtin')
 # p.Typ('Logic',        Simple)

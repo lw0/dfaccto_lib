@@ -47,8 +47,8 @@ with Pkg('dfaccto_axi',
 
 
 def _TypeAxi(ctx, name, data_bytes, addr_bits, id_bits=None,
-    add_split=False, has_wid=False, has_burst=True,
-    has_attr=False, has_lock=None, has_cache=None, has_prot=None, has_qos=None, has_region=None,
+    has_wid=False, has_burst=True, has_attr=False,
+    has_lock=None, has_cache=None, has_prot=None, has_qos=None, has_region=None,
     aruser_bits=None, awuser_bits=None, ruser_bits=None, wuser_bits=None, buser_bits=None):
 
   assert data_bytes in (1, 2, 4, 8, 16, 32, 64, 128), \
@@ -129,16 +129,18 @@ def _TypeAxi(ctx, name, data_bytes, addr_bits, id_bits=None,
   else:
     tregion = None
 
-  rd_name = '{}Rd'.format(name)
-  wr_name = '{}Wr'.format(name)
-  variants = [(name, True, True)]
-  if add_split:
-    variants.append((rd_name, True, False))
-    variants.append((wr_name, False, True))
+  variants = [(name,                None, True,  True,  True,  True, True),
+              ('{}Wr'.format(name), 'wr', True,  True,  True,  False, False),
+              ('{}Rd'.format(name), 'rd', False, False, False, True, True),
+              ('{}AW'.format(name), 'aw', True,  False, False, False, False) ,
+              ('{}W'.format(name),  'w',  False, True,  False, False, False),
+              ('{}B'.format(name),  'b',  False, False, True,  False, False),
+              ('{}AR'.format(name), 'ar', False, False, False, True , False) ,
+              ('{}R'.format(name),  'r',  False, False, False, False, True)]
 
   types = {}
-  for variant, has_rd, has_wr in variants:
-    types[variant] = TypeC(variant, x_is_axi=True,
+  for variant, label, hasaw, hasw, hasb, hasar, hasr in variants:
+    types[label] = TypeC(variant, x_is_axi=True, x_axi_variant=label,
           x_definition=ctx.Part('types/definition/axi.part.tpl'),
           x_format_ms=ctx.Part('types/format/axi_ms.part.tpl'),
           x_format_sm=ctx.Part('types/format/axi_sm.part.tpl'),
@@ -146,7 +148,16 @@ def _TypeAxi(ctx, name, data_bytes, addr_bits, id_bits=None,
           x_wrapeconv=ctx.Part('types/wrapeconv/axi.part.tpl'),
           x_wrapipmap=ctx.Part('types/wrapipmap/axi.part.tpl'),
           x_wrapigmap=ctx.Part('types/wrapigmap/axi.part.tpl'),
-          x_has_rd=has_rd, x_has_wr=has_wr,
+          x_has_aw=hasaw, x_has_w=hasw, x_has_b=hasb,
+          x_has_ar=hasar, x_has_r=hasr,
+          x_lst_aw=not hasw and not hasb and not hasar and not hasr,
+          x_fst_w=not hasaw,
+          x_lst_w=not hasb and not hasar and not hasr,
+          x_fst_b=not hasaw and not hasw,
+          x_lst_b=not hasar and not hasr,
+          x_fst_ar=not hasaw and not hasw and not hasb,
+          x_lst_ar=not hasr,
+          x_fst_r=not hasaw and not hasw and not hasb and not hasaw,
           x_tlogic=tlogic, x_tresp=tresp, x_tdata=tdata, x_tstrb=tstrb,
           x_taddr=taddr, x_twidx=twidx, x_twaddr=twaddr,
           x_tlen=tlen, x_tsize=tsize, x_tburst=tburst, x_tlast=tlast,
@@ -157,12 +168,234 @@ def _TypeAxi(ctx, name, data_bytes, addr_bits, id_bits=None,
           x_tqos=tqos, x_tregion=tregion,
           x_cnull=lambda t: Con('{}Null'.format(variant), t, value=Lit({'awsize': word_idx_bits, 'arsize': word_idx_bits})))
 
-  tmain = types[name]
-  if add_split:
-    tmain.x_trdhalf = types[rd_name]
-    tmain.x_twrhalf = types[wr_name]
-  return tmain
+  for type in types.values():
+    for label, ref_type in types.items():
+      if label is None:
+        type.set_prop('tmain'.format(label), ref_type)
+      else:
+        type.set_prop('tpart_{}'.format(label), ref_type)
+  return types[None]
 TypeAxi = ModuleContext(_TypeAxi)
+
+
+class AxiCheck:
+
+  def __init__(self, type):
+    if not getattr(type, 'x_is_axi', False):
+      raise AssertionError('{} must be an Axi type'.format(type))
+    self._type = type
+
+  @property
+  def variant(self):
+    return self._type.x_axi_variant
+
+  @property
+  def data_bits(self):
+    return self._type.x_tdata.x_width
+
+  @property
+  def addr_bits(self):
+    return self._type.x_taddr.x_width
+
+  @property
+  def id_bits(self):
+    return self._type.x_tid and self._type.x_tid.x_width
+
+  @property
+  def is_axi3(self):
+    return self._type.x_twid is not None
+
+  @property
+  def any_burst(self):
+    return any((self._type.x_tlen is not None,
+                self._type.x_tsize is not None,
+                self._type.x_tburst is not None,
+                self._type.x_tlast is not None))
+
+  @property
+  def all_burst(self):
+    return all((self._type.x_tlen is not None,
+                self._type.x_tsize is not None,
+                self._type.x_tburst is not None,
+                self._type.x_tlast is not None))
+
+  @property
+  def any_attr(self):
+    return any((self._type.x_tlock is not None,
+                self._type.x_tcache is not None,
+                self._type.x_tprot is not None,
+                self._type.x_tqos is not None,
+                self._type.x_tregion is not None))
+
+  @property
+  def all_attr(self):
+    return all((self._type.x_tlock is not None,
+                self._type.x_tcache is not None,
+                self._type.x_tprot is not None,
+                self._type.x_tqos is not None,
+                self._type.x_tregion is not None))
+
+  @property
+  def any_user(self):
+    return any((self._type.x_tawuser is not None,
+                self._type.x_twuser is not None,
+                self._type.x_tbuser is not None,
+                self._type.x_taruser is not None,
+                self._type.x_truser is not None))
+
+  @property
+  def all_user(self):
+    return all((self._type.x_tawuser is not None,
+                self._type.x_twuser is not None,
+                self._type.x_tbuser is not None,
+                self._type.x_taruser is not None,
+                self._type.x_truser is not None))
+
+  @property
+  def awuser_bits(self):
+    return self._type.x_tawuser and self._type.x_tawuser.x_width
+
+  @property
+  def wuser_bits(self):
+    return self._type.x_twuser and self._type.x_twuser.x_width
+
+  @property
+  def buser_bits(self):
+    return self._type.x_tbuser and self._type.x_tbuser.x_width
+
+  @property
+  def aruser_bits(self):
+    return self._type.x_taruser and self._type.x_taruser.x_width
+
+  @property
+  def ruser_bits(self):
+    return self._type.x_truser and self._type.x_truser.x_width
+
+  def req_variant(self, spec):
+    if spec is None:
+      if self.variant is not None:
+        raise AssertionError('{} must not be an Axi variant type'.format(self._type))
+    elif self.variant != spec: #TODO-lw this is incorrect, because of `and` above!
+        raise AssertionError('{} must be an Axi {} type'.format(self._type, spec))
+    return self
+
+  def req_addr(self, bits):
+    if self.addr_bits != bits:
+      raise AssertionError('{} must have {:d} address bits'.format(self._type, bits))
+    return self
+
+  def req_data(self, bits):
+    if self.data_bits != bits:
+      raise AssertionError('{} must have {:d} data bits'.format(self._type, bits))
+    return self
+
+  def req_id(self, spec):
+    if spec is False:
+      if self.id_bits is not None:
+        raise AssertionError('{} must not have id bits'.format(self._type))
+    elif spec is True:
+      if self.id_bits is None:
+        raise AssertionError('{} must have id bits'.format(self._type))
+    elif self.id_bits != spec:
+      raise AssertionError('{} must have {:d} id bits'.format(self._type, spec))
+    return self
+
+  def req_axi3(self, spec):
+    if spec is False and self.is_axi3:
+      raise AssertionError('{} must not be an AXI3 type'.format(self._type))
+    elif spec is True and not self.is_axi3:
+      raise AssertionError('{} must be an AXI3 type'.format(self._type))
+    return self
+
+  def req_burst(self, spec):
+    if spec is False and self.any_burst:
+      raise AssertionError('{} must not have burst signals'.format(self._type))
+    elif spec is True and not self.all_burst:
+      raise AssertionError('{} must have burst signals'.format(self._type))
+    return self
+
+  def req_any_attr(self, spec):
+    if spec is False and self.any_attr:
+      raise AssertionError('{} must not have any attribute signals'.format(self._type))
+    elif spec is True and not self.any_attr:
+      raise AssertionError('{} must have some attribute signals'.format(self._type))
+    return self
+
+  def req_all_attr(self, spec):
+    if spec is False and self.all_attr:
+      raise AssertionError('{} must not have all attribute signals'.format(self._type))
+    elif spec is True and not self.all_attr:
+      raise AssertionError('{} must have all attribute signals'.format(self._type))
+    return self
+
+  def req_any_user(self, spec):
+    if spec is False and self.any_user:
+      raise AssertionError('{} must not have any user signals'.format(self._type))
+    elif spec is True and not self.any_user:
+      raise AssertionError('{} must have some user signals'.format(self._type))
+    return self
+
+  def req_all_user(self, spec):
+    if spec is False and self.all_user:
+      raise AssertionError('{} must not have all user signals'.format(self._type))
+    elif spec is True and not self.all_user:
+      raise AssertionError('{} must have all user signals'.format(self._type))
+    return self
+
+  def req_awuser(self, spec):
+    if spec is False:
+      if self.awuser_bits is not None:
+        raise AssertionError('{} must not have an awuser signal'.format(self._type))
+    elif spec is True:
+      if self.awuser_bits is None:
+        raise AssertionError('{} must have an awuser signal'.format(self._type))
+    elif self.awuser_bits != spec:
+      raise AssertionError('{} must have {:d} awuser bits'.format(self._type, spec))
+    return self
+
+  def req_wuser(self, spec):
+    if spec is False:
+      if self.wuser_bits is not None:
+        raise AssertionError('{} must not have an wuser signal'.format(self._type))
+    elif spec is True:
+      if self.wuser_bits is None:
+        raise AssertionError('{} must have an wuser signal'.format(self._type))
+    elif self.wuser_bits != spec:
+      raise AssertionError('{} must have {:d} wuser bits'.format(self._type, spec))
+    return self
+
+  def req_buser(self, spec):
+    if spec is False:
+      if self.buser_bits is not None:
+        raise AssertionError('{} must not have an buser signal'.format(self._type))
+    elif spec is True:
+      if self.buser_bits is None:
+        raise AssertionError('{} must have an buser signal'.format(self._type))
+    elif self.buser_bits != spec:
+      raise AssertionError('{} must have {:d} buser bits'.format(self._type, spec))
+    return self
+
+  def req_aruser(self, spec):
+    if spec is False:
+      if self.aruser_bits is not None:
+        raise AssertionError('{} must not have an aruser signal'.format(self._type))
+    elif spec is True:
+      if self.aruser_bits is None:
+        raise AssertionError('{} must have an aruser signal'.format(self._type))
+    elif self.aruser_bits != spec:
+      raise AssertionError('{} must have {:d} aruser bits'.format(self._type, spec))
+    return self
+
+  def req_ruser(self, spec):
+    if spec is False:
+      if self.ruser_bits is not None:
+        raise AssertionError('{} must not have an ruser signal'.format(self._type))
+    elif spec is True:
+      if self.ruser_bits is None:
+        raise AssertionError('{} must have an ruser signal'.format(self._type))
+    elif self.ruser_bits != spec:
+      raise AssertionError('{} must have {:d} ruser bits'.format(self._type, spec))
+    return self
 
 
 def _TypeAxiStream(ctx, name, data_bytes, id_bits=None,
@@ -205,4 +438,88 @@ def _TypeAxiStream(ctx, name, data_bytes, id_bits=None,
       x_tid=tid, x_tdest=tdest, x_tuser=tuser,
       x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
 TypeAxiStream = ModuleContext(_TypeAxiStream)
+
+
+class AxiStreamCheck:
+
+  def __init__(self, type):
+    if not getattr(type, 'x_is_axi_stream', False):
+      raise AssertionError('{} must be an AxiStream type'.format(type))
+    self._type = type
+
+  @property
+  def data_bits(self):
+    return self._type.x_tdata.x_width
+
+  @property
+  def has_keep(self):
+    return self._type.x_tkeep is not None
+
+  @property
+  def has_strb(self):
+    return self._type.x_tstrb is not None
+
+  @property
+  def id_bits(self):
+    return self._type.x_tid and self._type.x_tid.x_width
+
+  @property
+  def dest_bits(self):
+    return self._type.x_tdest and self._type.x_tdest.x_width
+
+  @property
+  def user_bits(self):
+    return self._type.x_tuser and self._type.x_tuser.x_width
+
+  def req_data(self, spec):
+    if self.data_bits != spec:
+      raise AssertionError('{} must have {:d} data bits'.format(self._type, spec))
+    return self
+
+  def req_keep(self, spec):
+    if spec is False and self.has_keep:
+      raise AssertionError('{} must not have keep signals'.format(self._type))
+    elif spec is True and not self.has_keep:
+      raise AssertionError('{} must have keep signals'.format(self._type))
+    return self
+
+  def req_strb(self, spec):
+    if spec is False and self.has_strb:
+      raise AssertionError('{} must not have strb signals'.format(self._type))
+    elif spec is True and not self.has_strb:
+      raise AssertionError('{} must have strb signals'.format(self._type))
+    return self
+
+  def req_id(self, spec):
+    if spec is False:
+      if self.id_bits is not None:
+        raise AssertionError('{} must not have id signals'.format(self._type))
+    elif spec is True:
+      if self.id_bits is None:
+        raise AssertionError('{} must have id signals'.format(self._type))
+    elif self.id_bits != spec:
+      raise AssertionError('{} must have {:d} id bits'.format(self._type, spec))
+    return self
+
+  def req_dest(self, spec):
+    if spec is False:
+      if self.dest_bits is not None:
+        raise AssertionError('{} must not have dest signals'.format(self._type))
+    elif spec is True:
+      if self.dest_bits is None:
+        raise AssertionError('{} must have dest signals'.format(self._type))
+    elif self.dest_bits != spec:
+      raise AssertionError('{} must have {:d} dest bits'.format(self._type, spec))
+    return self
+
+  def req_user(self, spec):
+    if spec is False:
+      if self.user_bits is not None:
+        raise AssertionError('{} must not have user signals'.format(self._type))
+    elif spec is True:
+      if self.user_bits is None:
+        raise AssertionError('{} must have user signals'.format(self._type))
+    elif self.user_bits != spec:
+      raise AssertionError('{} must have {:d} user bits'.format(self._type, spec))
+    return self
 

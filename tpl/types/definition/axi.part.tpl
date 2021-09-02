@@ -1,5 +1,5 @@
 type {{.identifier_ms}} is record
-{{?.x_has_wr}}
+{{?.x_has_aw}}
   awaddr   : {{.x_taddr.qualified}};
 {{? .x_tlen}}
   awlen    : {{.x_tlen.qualified}};
@@ -32,6 +32,8 @@ type {{.identifier_ms}} is record
   awuser   : {{.x_tawuser.qualified}};
 {{/ .x_tawuser}}
   awvalid  : {{.x_tlogic.qualified}};
+{{/.x_has_aw}}
+{{?.x_has_w}}
   wdata    : {{.x_tdata.qualified}};
   wstrb    : {{.x_tstrb.qualified}};
 {{? .x_tlast}}
@@ -44,9 +46,11 @@ type {{.identifier_ms}} is record
   wuser    : {{.x_twuser.qualified}};
 {{/ .x_twuser}}
   wvalid   : {{.x_tlogic.qualified}};
+{{/.x_has_w}}
+{{?.x_has_b}}
   bready   : {{.x_tlogic.qualified}};
-{{/.x_has_wr}}
-{{?.x_has_rd}}
+{{/.x_has_b}}
+{{?.x_has_ar}}
   araddr   : {{.x_taddr.qualified}};
 {{? .x_tlen}}
   arlen    : {{.x_tlen.qualified}};
@@ -79,13 +83,19 @@ type {{.identifier_ms}} is record
   aruser   : {{.x_taruser.qualified}};
 {{/ .x_taruser}}
   arvalid  : {{.x_tlogic.qualified}};
+{{/.x_has_ar}}
+{{?.x_has_r}}
   rready   : {{.x_tlogic.qualified}};
-{{/.x_has_rd}}
+{{/.x_has_r}}
 end record;
 type {{.identifier_sm}} is record
-{{?.x_has_wr}}
+{{?.x_has_aw}}
   awready  : {{.x_tlogic.qualified}};
+{{/.x_has_aw}}
+{{?.x_has_w}}
   wready   : {{.x_tlogic.qualified}};
+{{/.x_has_w}}
+{{?.x_has_b}}
   bresp    : {{.x_tresp.qualified}};
 {{? .x_tid}}
   bid      : {{.x_tid.qualified}};
@@ -94,9 +104,11 @@ type {{.identifier_sm}} is record
   buser   : {{.x_tbuser.qualified}};
 {{/ .x_tbuser}}
   bvalid   : {{.x_tlogic.qualified}};
-{{/.x_has_wr}}
-{{?.x_has_rd}}
+{{/.x_has_b}}
+{{?.x_has_ar}}
   arready  : {{.x_tlogic.qualified}};
+{{/.x_has_ar}}
+{{?.x_has_r}}
   rdata    : {{.x_tdata.qualified}};
   rresp    : {{.x_tresp.qualified}};
 {{? .x_tlast}}
@@ -109,7 +121,7 @@ type {{.identifier_sm}} is record
   ruser   : {{.x_truser.qualified}};
 {{/ .x_truser}}
   rvalid   : {{.x_tlogic.qualified}};
-{{/.x_has_rd}}
+{{/.x_has_r}}
 end record;
 type {{.identifier_v_ms}} is array (integer range <>) of {{.qualified_ms}};
 type {{.identifier_v_sm}} is array (integer range <>) of {{.qualified_sm}};

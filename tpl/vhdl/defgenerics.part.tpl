@@ -1,6 +1,6 @@
 {{?generics}}
-  generic (
+generic (
 {{# generics}}
-    {{>vhdl/defgeneric.part.tpl}}{{?_last}}){{/_last}};
+  {{>vhdl/defgeneric.part.tpl}}{{?_last}}){{/_last}};
 {{/ generics}}
 {{/generics}}

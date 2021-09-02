@@ -1,5 +1,4 @@
-{{?..x_has_wr}}
--- {{..}}   |   {{.}}
+{{?..x_has_aw}}
 (awaddr   => {{=..x_taddr}}{{=..awaddr}}{{*..x_format}}{{|..awaddr}}{{.x_cnull.qualified}}{{/..awaddr}}{{/..x_taddr}},
 {{? ..x_tlen}}
  awlen    => {{=..x_tlen}}{{=..awlen}}{{*..x_format}}{{|..awlen}}{{.x_cnull.qualified}}{{/..awlen}}{{/..x_tlen}},
@@ -31,8 +30,10 @@
 {{? ..x_tawuser}}
  awuser   => {{=..x_tawuser}}{{=..awuser}}{{*..x_format}}{{|..awuser}}{{.x_cnull.qualified}}{{/..awuser}}{{/..x_tawuser}},
 {{/ ..x_tawuser}}
- awvalid  => {{=..x_tlogic}}{{=..awvalid}}{{*..x_format}}{{|..awvalid}}{{.x_cnull.qualified}}{{/..awvalid}}{{/..x_tlogic}},
- wdata    => {{=..x_tdata}}{{=..wdata}}{{*..x_format}}{{|..wdata}}{{.x_cnull.qualified}}{{/..wdata}}{{/..x_tdata}},
+ awvalid  => {{=..x_tlogic}}{{=..awvalid}}{{*..x_format}}{{|..awvalid}}{{.x_cnull.qualified}}{{/..awvalid}}{{/..x_tlogic}}{{?..x_lst_aw}}){{|..x_lst_aw}},{{/..x_lst_aw}}
+{{/..x_has_aw}}
+{{?..x_has_w}}
+{{?..x_fst_w}}({{|..x_fst_w}} {{/..x_fst_w}}wdata    => {{=..x_tdata}}{{=..wdata}}{{*..x_format}}{{|..wdata}}{{.x_cnull.qualified}}{{/..wdata}}{{/..x_tdata}},
  wstrb    => {{=..x_tstrb}}{{=..wstrb}}{{*..x_format}}{{|..wstrb}}{{.x_cnull.qualified}}{{/..wstrb}}{{/..x_tstrb}},
 {{? ..x_tlast}}
  wlast    => {{=..x_tlast}}{{=..wlast}}{{*..x_format}}{{|..wlast}}{{.x_cnull.qualified}}{{/..wlast}}{{/..x_tlast}},
@@ -43,11 +44,13 @@
 {{? ..x_twuser}}
  wuser    => {{=..x_twuser}}{{=..wuser}}{{*..x_format}}{{|..wuser}}{{.x_cnull.qualified}}{{/..wuser}}{{/..x_twuser}},
 {{/ ..x_twuser}}
- wvalid   => {{=..x_tlogic}}{{=..wvalid}}{{*..x_format}}{{|..wvalid}}{{.x_cnull.qualified}}{{/..wvalid}}{{/..x_tlogic}},
- bready   => {{=..x_tlogic}}{{=..bready}}{{*..x_format}}{{|..bready}}{{.x_cnull.qualified}}{{/..bready}}{{/..x_tlogic}}{{?..x_has_rd}},{{|..x_has_rd}}){{/..x_has_rd}}
-{{/..x_has_wr}}
-{{?..x_has_rd}}
-{{?..x_has_wr}} {{|..x_has_wr}}({{/..x_has_wr}}araddr   => {{=..x_taddr}}{{=..araddr}}{{*..x_format}}{{|..araddr}}{{.x_cnull.qualified}}{{/..araddr}}{{/..x_taddr}},
+ wvalid   => {{=..x_tlogic}}{{=..wvalid}}{{*..x_format}}{{|..wvalid}}{{.x_cnull.qualified}}{{/..wvalid}}{{/..x_tlogic}}{{?..x_lst_w}}){{|..x_lst_w}},{{/..x_lst_w}}
+{{/..x_has_w}}
+{{?..x_has_b}}
+{{?..x_fst_b}}({{|..x_fst_b}} {{/..x_fst_b}}bready   => {{=..x_tlogic}}{{=..bready}}{{*..x_format}}{{|..bready}}{{.x_cnull.qualified}}{{/..bready}}{{/..x_tlogic}}{{?..x_lst_b}}){{|..x_lst_b}},{{/..x_lst_b}}
+{{/..x_has_b}}
+{{?..x_has_ar}}
+{{?..x_fst_ar}}({{|..x_fst_ar}} {{/..x_fst_ar}}araddr   => {{=..x_taddr}}{{=..araddr}}{{*..x_format}}{{|..araddr}}{{.x_cnull.qualified}}{{/..araddr}}{{/..x_taddr}},
 {{? ..x_tlen}}
  arlen    => {{=..x_tlen}}{{=..arlen}}{{*..x_format}}{{|..arlen}}{{.x_cnull.qualified}}{{/..arlen}}{{/..x_tlen}},
 {{/ ..x_tlen}}
@@ -78,6 +81,8 @@
 {{? ..x_taruser}}
  aruser   => {{=..x_taruser}}{{=..aruser}}{{*..x_format}}{{|..aruser}}{{.x_cnull.qualified}}{{/..aruser}}{{/..x_taruser}},
 {{/ ..x_taruser}}
- arvalid  => {{=..x_tlogic}}{{=..arvalid}}{{*..x_format}}{{|..arvalid}}{{.x_cnull.qualified}}{{/..arvalid}}{{/..x_tlogic}},
- rready   => {{=..x_tlogic}}{{=..rready}}{{*..x_format}}{{|..rready}}{{.x_cnull.qualified}}{{/..rready}}{{/..x_tlogic}})
-{{/..x_has_rd}}
+ arvalid  => {{=..x_tlogic}}{{=..arvalid}}{{*..x_format}}{{|..arvalid}}{{.x_cnull.qualified}}{{/..arvalid}}{{/..x_tlogic}}{{?..x_lst_ar}}){{|..x_lst_ar}},{{/..x_lst_ar}}
+{{/..x_has_ar}}
+{{?..x_has_r}}
+{{?..x_fst_r}}({{|..x_fst_r}} {{/..x_fst_r}}rready   => {{=..x_tlogic}}{{=..rready}}{{*..x_format}}{{|..rready}}{{.x_cnull.qualified}}{{/..rready}}{{/..x_tlogic}})
+{{/..x_has_r}}

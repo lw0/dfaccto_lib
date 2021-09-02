@@ -1,18 +1,14 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+{{>vhdl/dependencies.part.tpl}}
 
-{{#dependencies}}
-use work.{{identifier}};
-{{/dependencies}}
-use work.dfaccto;
-use work.ocaccel;
-use work.dfaccto_axi;
-use work.user;
-use work.util.all;
+use work.{{x_util.identifier}}.all;
+
 
 entity {{identifier}} is
   generic (
+    g_AddrWidth  : positive,
+    g_CountWidth : positive,
+    g_LenWidth   : positive,
+    g_Boundary   : natural,
     g_FIFOLogDepth : natural);
   port (
     pi_clk             : in  std_logic;
@@ -26,16 +22,16 @@ entity {{identifier}} is
     -- if asserted, no new burst will be inserted into the queue
     pi_abort           : in  std_logic := '0';
 
-    pi_address         : in  ocaccel.t_AxiHbmWordAddr;
-    pi_count           : in  user.t_RegData;
-    pi_maxLen          : in  ocaccel.t_AxiHbmLen;
+    pi_address         : in  unsigned (g_AddrWidth-1 downto 0);
+    pi_count           : in  unsigned (g_CountWidth-1 downto 0);
+    pi_maxLen          : in  unsigned (g_LenWidth-1 downto 0);
 
-    po_axiAAddr        : out ocaccel.t_AxiHbmAddr;
-    po_axiALen         : out ocaccel.t_AxiHbmLen;
+    po_axiAAddr        : out unsigned (g_AddrWidth-1 downto 0);
+    po_axiALen         : out unsigned (g_LenWidth-1 downto 0);
     po_axiAValid       : out std_logic;
     pi_axiAReady       : in  std_logic;
 
-    po_queueBurstCount : out ocaccel.t_AxiHbmLen;
+    po_queueBurstCount : out unsigned (g_LenWidth-1 downto 0);
     po_queueBurstLast  : out std_logic;
     po_queueValid      : out std_logic;
     pi_queueReady      : in  std_logic;
@@ -43,7 +39,8 @@ entity {{identifier}} is
     po_status          : out unsigned(7 downto 0));
 end {{identifier}};
 
-architecture AxiAddrMachine of {{identifier}} is
+
+architecture AddrMachine of {{identifier}} is
 
   signal so_ready         : std_logic;
 
@@ -366,4 +363,4 @@ begin
     "1101" when WaitADoneFLast;
   po_status <= s_qRdValid & s_qRdReady & s_qWrValid & s_qWrReady & s_stateEnc;
 
-end AxiAddrMachine;
+end AddrMachine;

@@ -34,8 +34,7 @@ TypeInteger = ModuleContext(_TypeInteger)
 
 
 def _TypeUnsigned(ctx, name, width, **directives):
-  return TypeS(name,
-      x_is_unsigned=True,
+  return TypeS(name, x_is_unsigned=True,
       x_width=width,
       x_definition=ctx.Part('types/definition/unsigned.part.tpl'),
       x_format=ctx.Part('types/format/unsigned.part.tpl'),
@@ -48,6 +47,22 @@ def _TypeUnsigned(ctx, name, width, **directives):
 TypeUnsigned = ModuleContext(_TypeUnsigned)
 
 
+class UnsignedCheck:
+  def __init__(self, type):
+    if not getattr(type, 'x_is_unsigned', False):
+      raise AssertionError('{} must be an Unsigned type'.format(type))
+    self._type = type
+
+  @property
+  def width(self):
+    return self._type.x_width
+
+  def req_width(self, bits):
+    if self.width != bits:
+      raise AssertionError('{} must be {:d} bits wide'.format(self._type, bits))
+    return self
+
+
 def uwidth(x):
     assert x >= 0, 'Can not compute unsigned width on a negative value'
     return x.bit_length()
@@ -57,3 +72,5 @@ def swidth(x):
     if x < 0:
         x = ~x
     return x.bit_length() + 1
+
+

@@ -1,5 +1,5 @@
 {{?.is_ms_input}}
-{{? .type.x_has_wr}}
+{{? .type.x_has_aw}}
 {{.identifier_ms}}.awaddr   <= {{.type.x_taddr.qualified}}({{.x_wrapname}}_awaddr);
 {{?  .type.x_tlen}}
 {{.identifier_ms}}.awlen    <= {{.type.x_tlen.qualified}}({{.x_wrapname}}_awlen);
@@ -32,6 +32,8 @@
 {{.identifier_ms}}.awuser   <= {{.type.x_tawuser.qualified}}({{.x_wrapname}}_awuser);
 {{/  .type.x_tawuser}}
 {{.identifier_ms}}.awvalid  <= {{.x_wrapname}}_awvalid;
+{{/ .type.x_has_aw}}
+{{? .type.x_has_w}}
 {{.identifier_ms}}.wdata    <= {{.type.x_tdata.qualified}}({{.x_wrapname}}_wdata);
 {{.identifier_ms}}.wstrb    <= {{.type.x_tstrb.qualified}}({{.x_wrapname}}_wstrb);
 {{?  .type.x_tlast}}
@@ -44,9 +46,11 @@
 {{.identifier_ms}}.wuser    <= {{.type.x_twuser.qualified}}({{.x_wrapname}}_wuser);
 {{/  .type.x_twuser}}
 {{.identifier_ms}}.wvalid   <= {{.x_wrapname}}_wvalid;
+{{/ .type.x_has_w}}
+{{? .type.x_has_b}}
 {{.identifier_ms}}.bready   <= {{.x_wrapname}}_bready;
-{{/ .type.x_has_wr}}
-{{? .type.x_has_rd}}
+{{/ .type.x_has_b}}
+{{? .type.x_has_ar}}
 {{.identifier_ms}}.araddr   <= {{.type.x_taddr.qualified}}({{.x_wrapname}}_araddr);
 {{?  .type.x_tlen}}
 {{.identifier_ms}}.arlen    <= {{.type.x_tlen.qualified}}({{.x_wrapname}}_arlen);
@@ -79,10 +83,12 @@
 {{.identifier_ms}}.aruser   <= {{.type.x_taruser.qualified}}({{.x_wrapname}}_aruser);
 {{/  .type.x_taruser}}
 {{.identifier_ms}}.arvalid  <= {{.x_wrapname}}_arvalid;
+{{/ .type.x_has_ar}}
+{{? .type.x_has_r}}
 {{.identifier_ms}}.rready   <= {{.x_wrapname}}_rready;
-{{/ .type.x_has_rd}}
+{{/ .type.x_has_r}}
 {{|.is_ms_input}}
-{{? .type.x_has_wr}}
+{{? .type.x_has_aw}}
 {{.x_wrapname}}_awaddr   <= std_logic_vector({{.identifier_ms}}.awaddr);
 {{?  .type.x_tlen}}
 {{.x_wrapname}}_awlen    <= std_logic_vector({{.identifier_ms}}.awlen);
@@ -115,6 +121,8 @@
 {{.x_wrapname}}_awuser   <= std_logic_vector({{.identifier_ms}}.awuser);
 {{/  .type.x_tawuser}}
 {{.x_wrapname}}_awvalid  <= {{.identifier_ms}}.awvalid;
+{{/ .type.x_has_aw}}
+{{? .type.x_has_w}}
 {{.x_wrapname}}_wdata    <= std_logic_vector({{.identifier_ms}}.wdata);
 {{.x_wrapname}}_wstrb    <= std_logic_vector({{.identifier_ms}}.wstrb);
 {{?  .type.x_tlast}}
@@ -127,8 +135,10 @@
 {{.x_wrapname}}_wuser    <= std_logic_vector({{.identifier_ms}}.wuser);
 {{/  .type.x_twuser}}
 {{.x_wrapname}}_wvalid   <= {{.identifier_ms}}.wvalid;
+{{/ .type.x_has_w}}
+{{? .type.x_has_b}}
 {{.x_wrapname}}_bready   <= {{.identifier_ms}}.bready;
-{{/ .type.x_has_wr}}
+{{/ .type.x_has_b}}
 {{? .type.x_has_rd}}
 {{.x_wrapname}}_araddr   <= std_logic_vector({{.identifier_ms}}.araddr);
 {{?  .type.x_tlen}}
@@ -162,13 +172,19 @@
 {{.x_wrapname}}_aruser   <= std_logic_vector({{.identifier_ms}}.aruser);
 {{/  .type.x_taruser}}
 {{.x_wrapname}}_arvalid  <= {{.identifier_ms}}.arvalid;
+{{/ .type.x_has_ar}}
+{{? .type.x_has_r}}
 {{.x_wrapname}}_rready   <= {{.identifier_ms}}.rready;
-{{/ .type.x_has_rd}}
+{{/ .type.x_has_r}}
 {{/.is_ms_input}}
 {{?.is_sm_input}}
-{{? .type.x_has_wr}}
+{{? .type.x_has_aw}}
 {{.identifier_sm}}.awready <= {{.x_wrapname}}_awready;
+{{/ .type.x_has_aw}}
+{{? .type.x_has_w}}
 {{.identifier_sm}}.wready  <= {{.x_wrapname}}_wready;
+{{/ .type.x_has_w}}
+{{? .type.x_has_b}}
 {{.identifier_sm}}.bresp   <= {{.type.x_tresp.qualified}}({{.x_wrapname}}_bresp);
 {{?  .type.x_tid}}
 {{.identifier_sm}}.bid     <= {{.type.x_tid.qualified}}({{.x_wrapname}}_bid);
@@ -177,9 +193,11 @@
 {{.identifier_sm}}.buser   <= {{.type.x_tbuser.qualified}}({{.x_wrapname}}_buser);
 {{/  .type.x_tbuser}}
 {{.identifier_sm}}.bvalid  <= {{.x_wrapname}}_bvalid;
-{{/ .type.x_has_wr}}
-{{? .type.x_has_rd}}
+{{/ .type.x_has_b}}
+{{? .type.x_has_ar}}
 {{.identifier_sm}}.arready <= {{.x_wrapname}}_arready;
+{{/ .type.x_has_ar}}
+{{? .type.x_has_r}}
 {{.identifier_sm}}.rdata   <= {{.type.x_tdata.qualified}}({{.x_wrapname}}_rdata);
 {{.identifier_sm}}.rresp   <= {{.type.x_tresp.qualified}}({{.x_wrapname}}_rresp);
 {{?  .type.x_tlast}}
@@ -192,11 +210,15 @@
 {{.identifier_sm}}.ruser   <= {{.type.x_truser.qualified}}({{.x_wrapname}}_ruser);
 {{/  .type.x_truser}}
 {{.identifier_sm}}.rvalid  <= {{.x_wrapname}}_rvalid;
-{{/ .type.x_has_rd}}
+{{/ .type.x_has_r}}
 {{|.is_sm_input}}
-{{? .type.x_has_wr}}
+{{? .type.x_has_aw}}
 {{.x_wrapname}}_awready  <= {{.identifier_sm}}.awready;
+{{/ .type.x_has_aw}}
+{{? .type.x_has_w}}
 {{.x_wrapname}}_wready   <= {{.identifier_sm}}.wready;
+{{/ .type.x_has_w}}
+{{? .type.x_has_b}}
 {{.x_wrapname}}_bresp    <= std_logic_vector({{.identifier_sm}}.bresp);
 {{?  .type.x_tid}}
 {{.x_wrapname}}_bid      <= std_logic_vector({{.identifier_sm}}.bid);
@@ -205,9 +227,11 @@
 {{.x_wrapname}}_buser    <= std_logic_vector({{.identifier_sm}}.buser);
 {{/  .type.x_tbuser}}
 {{.x_wrapname}}_bvalid   <= {{.identifier_sm}}.bvalid;
-{{/ .type.x_has_wr}}
-{{? .type.x_has_rd}}
+{{/ .type.x_has_b}}
+{{? .type.x_has_ar}}
 {{.x_wrapname}}_arready  <= {{.identifier_sm}}.arready;
+{{/ .type.x_has_ar}}
+{{? .type.x_has_r}}
 {{.x_wrapname}}_rdata    <= std_logic_vector({{.identifier_sm}}.rdata);
 {{.x_wrapname}}_rresp    <= std_logic_vector({{.identifier_sm}}.rresp);
 {{?  .type.x_tlast}}
@@ -220,5 +244,5 @@
 {{.x_wrapname}}_ruser    <= std_logic_vector({{.identifier_sm}}.ruser);
 {{/  .type.x_truser}}
 {{.x_wrapname}}_rvalid   <= {{.identifier_sm}}.rvalid;
-{{/ .type.x_has_rd}}
+{{/ .type.x_has_r}}
 {{/.is_sm_input}}
