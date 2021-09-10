@@ -1,157 +1,144 @@
-Inc('dfaccto/utils.py', abs=True)
-Inc('dfaccto/base.py', abs=True)
+Inc('dfaccto/util.py', abs=True)
 
 
-def _TypeHlsBlock(ctx, name, data_bits=None, has_continue=False):
-  # for ap_ctrl_hs, ap_ctrl_chain
-  # ap_idle     --sm-> idle
-  # ap_start    <-ms-- start
-  # ap_ready    --sm-> ready
-  # ap_return   --sm-> data    ?data_bits
-  # ap_done     --sm-> done
-  # ap_continue <-ms-- cont    ?has_continue
-  if data_bits is not None:
-    tdata = TypeUnsigned('{}Data'.format(name), width=data_bits)
-  else:
-    tdata = None
-  tlogic = T('Logic', 'dfaccto')
-  return TypeC(name, x_is_hls_block=True,
-        x_definition=ctx.Part('types/definition/hls_block.part.tpl'),
-        x_format_ms=ctx.Part('types/format/hls_block_ms.part.tpl'),
-        x_format_sm=ctx.Part('types/format/hls_block_sm.part.tpl'),
-        x_wrapeport=ctx.Part('types/wrapeport/hls_block.part.tpl'),
-        x_wrapeconv=ctx.Part('types/wrapeconv/hls_block.part.tpl'),
-        x_wrapipmap=ctx.Part('types/wrapipmap/hls_block.part.tpl'),
-        x_wrapigmap=None,
-        x_tlogic=tlogic, x_has_continue=bool(has_continue), x_tdata=tdata,
-        x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
-TypeHlsBlock = ModuleContext(_TypeHlsBlock)
+class HLS(ModuleContext):
+  def __init__(self):
+    ModuleContext.__init__(self)
 
+  def TypeBlock(self, name, data_bits=None, has_continue=False):
+    # for ap_ctrl_hs, ap_ctrl_chain
+    # ap_idle     --sm-> idle
+    # ap_start    <-ms-- start
+    # ap_ready    --sm-> ready
+    # ap_return   --sm-> data    ?data_bits
+    # ap_done     --sm-> done
+    # ap_continue <-ms-- cont    ?has_continue
+    tdata = Util.TypeUnsigned('{}Data'.format(name), width=data_bits) if data_bits is not None else None
+    return TypeC(name, x_is_hls_block=True,
+          x_definition=self.Part('types/definition/hls_block.part.tpl'),
+          x_format_ms=self.Part('types/format/hls_block_ms.part.tpl'),
+          x_format_sm=self.Part('types/format/hls_block_sm.part.tpl'),
+          x_wrapeport=self.Part('types/wrapeport/hls_block.part.tpl'),
+          x_wrapeconv=self.Part('types/wrapeconv/hls_block.part.tpl'),
+          x_wrapipmap=self.Part('types/wrapipmap/hls_block.part.tpl'),
+          x_wrapigmap=None,
+          x_tlogic=Util.tlogic, x_has_continue=bool(has_continue), x_tdata=tdata,
+          x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
 
-def _TypeHlsHandshake(ctx, name, data_bits, mode='hs', is_input=False, is_output=False):
-  # for ap_hs, ap_(o)vld, ap_ack
-  # <name><i_pfx>        <-sm-- idata         ?is_input
-  # <name><i_pfx>_ap_vld <-sm-- ivld ?has_vld ?is_input
-  # <name><i_pfx>_ap_ack --ms-> iack ?has_ack ?is_input
-  # <name><o_pfx>        --ms-> odata         ?is_output
-  # <name><o_pfx>_ap_vld --ms-> ovld ?has_vld ?is_output
-  # <name><o_pfx>_ap_ack <-sm-- oack ?has_ack ?is_output
-  assert is_input or is_output, 'HlsHandshake must be input or output'
-  if mode == 'hs':
-    has_ivld = True
-    has_ovld = True
-    has_ack  = True
-  elif mode == 'vld':
-    has_ivld = True
-    has_ovld = True
-    has_ack  = False
-  elif mode == 'ack':
-    has_ivld = False
-    has_ovld = False
-    has_ack  = True
-  elif mode == 'ovld':
-    has_ivld = False
-    has_ovld = True
-    has_ack  = False
-  else:
-    assert False, 'HlsHandshake invalid mode "{}"'.format(mode)
+  def TypeHandshake(self, name, data_bits, mode='hs', is_input=False, is_output=False):
+    # for ap_hs, ap_(o)vld, ap_ack
+    # <name><i_pfx>        <-sm-- idata         ?is_input
+    # <name><i_pfx>_ap_vld <-sm-- ivld ?has_vld ?is_input
+    # <name><i_pfx>_ap_ack --ms-> iack ?has_ack ?is_input
+    # <name><o_pfx>        --ms-> odata         ?is_output
+    # <name><o_pfx>_ap_vld --ms-> ovld ?has_vld ?is_output
+    # <name><o_pfx>_ap_ack <-sm-- oack ?has_ack ?is_output
+    assert is_input or is_output, 'HlsHandshake must be input or output'
+    if mode == 'hs':
+      has_ivld = True
+      has_ovld = True
+      has_ack  = True
+    elif mode == 'vld':
+      has_ivld = True
+      has_ovld = True
+      has_ack  = False
+    elif mode == 'ack':
+      has_ivld = False
+      has_ovld = False
+      has_ack  = True
+    elif mode == 'ovld':
+      has_ivld = False
+      has_ovld = True
+      has_ack  = False
+    else:
+      assert False, 'HlsHandshake invalid mode "{}"'.format(mode)
 
-  in_prefix = '_i' if is_input and is_output else ''
-  out_prefix = '_o' if is_input and is_output else ''
+    in_prefix = '_i' if is_input and is_output else ''
+    out_prefix = '_o' if is_input and is_output else ''
 
-  tdata = TypeUnsigned('{}Data'.format(name), width=data_bits)
-  tlogic = T('Logic', 'dfaccto')
-  return TypeC(name, x_is_hls_handshake=True,
-        x_definition=ctx.Part('types/definition/hls_handshake.part.tpl'),
-        x_format_ms=ctx.Part('types/format/hls_handshake_ms.part.tpl'),
-        x_format_sm=ctx.Part('types/format/hls_handshake_sm.part.tpl'),
-        x_wrapeport=ctx.Part('types/wrapeport/hls_handshake.part.tpl'),
-        x_wrapeconv=ctx.Part('types/wrapeconv/hls_handshake.part.tpl'),
-        x_wrapipmap=ctx.Part('types/wrapipmap/hls_handshake.part.tpl'),
-        x_wrapigmap=None,
-        x_tlogic=tlogic, x_tdata=tdata, x_in_prefix=in_prefix, x_out_prefix=out_prefix,
-        x_iprefix=in_prefix, x_oprefix=out_prefix,
-        x_is_input=is_input, x_is_output=is_output,
-        x_has_iack=has_ack and is_input, x_has_oack=has_ack and is_output,
-        x_has_ivld=has_ivld and is_input, x_has_ovld=has_ovld and is_output,
-        x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
-TypeHlsHandshake = ModuleContext(_TypeHlsHandshake)
+    tdata = Util.TypeUnsigned('{}Data'.format(name), width=data_bits)
+    return TypeC(name, x_is_hls_handshake=True,
+          x_definition=self.Part('types/definition/hls_handshake.part.tpl'),
+          x_format_ms=self.Part('types/format/hls_handshake_ms.part.tpl'),
+          x_format_sm=self.Part('types/format/hls_handshake_sm.part.tpl'),
+          x_wrapeport=self.Part('types/wrapeport/hls_handshake.part.tpl'),
+          x_wrapeconv=self.Part('types/wrapeconv/hls_handshake.part.tpl'),
+          x_wrapipmap=self.Part('types/wrapipmap/hls_handshake.part.tpl'),
+          x_wrapigmap=None,
+          x_tlogic=Util.tlogic, x_tdata=tdata, x_in_prefix=in_prefix, x_out_prefix=out_prefix,
+          x_iprefix=in_prefix, x_oprefix=out_prefix,
+          x_is_input=is_input, x_is_output=is_output,
+          x_has_iack=has_ack and is_input, x_has_oack=has_ack and is_output,
+          x_has_ivld=has_ivld and is_input, x_has_ovld=has_ovld and is_output,
+          x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
 
+  def TypeFifo(self, name, data_bits, is_source=False, is_sink=False):
+    # for ap_fifo
+    # <name>_dout    <-sm-- data     ?is_sink
+    # <name>_empty_n <-sm-- ready    ?is_sink
+    # <name>_read    --ms-> strobe   ?is_sink
+    # <name>_din     --ms-> data     ?is_source
+    # <name>_full_n  <-sm-- ready    ?is_source
+    # <name>_write   --ms-> strobe   ?is_source
+    assert (is_source and not is_sink) or (not is_source and is_sink), "HlsFifo must be either source or sink"
+    tdata = Util.TypeUnsigned('{}Data'.format(name), width=data_bits)
+    return TypeC(name, x_is_hls_fifo=True,
+          x_definition=self.Part('types/definition/hls_fifo.part.tpl'),
+          x_format_ms=self.Part('types/format/hls_fifo_ms.part.tpl'),
+          x_format_sm=self.Part('types/format/hls_fifo_sm.part.tpl'),
+          x_wrapeport=self.Part('types/wrapeport/hls_fifo.part.tpl'),
+          x_wrapeconv=self.Part('types/wrapeconv/hls_fifo.part.tpl'),
+          x_wrapipmap=self.Part('types/wrapipmap/hls_fifo.part.tpl'),
+          x_wrapigmap=None,
+          x_tlogic=Util.tlogic, x_tdata=tdata, x_is_sink=is_sink,
+          x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
 
-def _TypeHlsFifo(ctx, name, data_bits, is_source=False, is_sink=False):
-  # for ap_fifo
-  # <name>_dout    <-sm-- data     ?is_sink
-  # <name>_empty_n <-sm-- ready    ?is_sink
-  # <name>_read    --ms-> strobe   ?is_sink
-  # <name>_din     --ms-> data     ?is_source
-  # <name>_full_n  <-sm-- ready    ?is_source
-  # <name>_write   --ms-> strobe   ?is_source
-  assert (is_source and not is_sink) or (not is_source and is_sink), "HlsFifo must be either source or sink"
-  tdata = TypeUnsigned('{}Data'.format(name), width=data_bits)
-  tlogic = T('Logic', 'dfaccto')
-  return TypeC(name, x_is_hls_fifo=True,
-        x_definition=ctx.Part('types/definition/hls_fifo.part.tpl'),
-        x_format_ms=ctx.Part('types/format/hls_fifo_ms.part.tpl'),
-        x_format_sm=ctx.Part('types/format/hls_fifo_sm.part.tpl'),
-        x_wrapeport=ctx.Part('types/wrapeport/hls_fifo.part.tpl'),
-        x_wrapeconv=ctx.Part('types/wrapeconv/hls_fifo.part.tpl'),
-        x_wrapipmap=ctx.Part('types/wrapipmap/hls_fifo.part.tpl'),
-        x_wrapigmap=None,
-        x_tlogic=tlogic, x_tdata=tdata, x_is_sink=is_sink,
-        x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
-TypeHlsFifo = ModuleContext(_TypeHlsFifo)
+  def TypeMemory(self, name, data_bits, addr_bits, has_wr=True, has_rd=True):
+    # for ap_memory
+    # <name>_address0  --ms-> addr
+    # <name>_we0       --ms-> write    ?has_wr
+    # <name>_d0        --ms-> wdata    ?has_wr
+    # <name>_q0        <-sm-- rdata    ?has_rd
+    # <name>_ce0       --ms-> strobe
+    assert has_wr or has_rd, 'HlsMemory must have read or write signals'
+    tdata = Util.TypeUnsigned('{}Data'.format(name), width=data_bits)
+    taddr = Util.TypeUnsigned('{}Addr'.format(name), width=addr_bits)
+    return TypeC(name, x_is_hls_memory=True,
+          x_definition=self.Part('types/definition/hls_memory.part.tpl'),
+          x_format_ms=self.Part('types/format/hls_memory_ms.part.tpl'),
+          x_format_sm=self.Part('types/format/hls_memory_sm.part.tpl'),
+          x_wrapeport=self.Part('types/wrapeport/hls_memory.part.tpl'),
+          x_wrapeconv=self.Part('types/wrapeconv/hls_memory.part.tpl'),
+          x_wrapipmap=self.Part('types/wrapipmap/hls_memory.part.tpl'),
+          x_wrapigmap=None,
+          x_tlogic=Util.tlogic, x_tdata=tdata, x_taddr=taddr,
+          x_has_wr=bool(has_wr), x_has_rd=bool(has_rd),
+          x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
 
-
-def _TypeHlsMemory(ctx, name, data_bits, addr_bits, has_wr=True, has_rd=True):
-  # for ap_memory
-  # <name>_address0  --ms-> addr
-  # <name>_we0       --ms-> write    ?has_wr
-  # <name>_d0        --ms-> wdata    ?has_wr
-  # <name>_q0        <-sm-- rdata    ?has_rd
-  # <name>_ce0       --ms-> strobe
-  assert has_wr or has_rd, 'HlsMemory must have read or write signals'
-  tdata = TypeUnsigned('{}Data'.format(name), width=data_bits)
-  taddr = TypeUnsigned('{}Addr'.format(name), width=addr_bits)
-  tlogic = T('Logic', 'dfaccto')
-  return TypeC(name, x_is_hls_memory=True,
-        x_definition=ctx.Part('types/definition/hls_memory.part.tpl'),
-        x_format_ms=ctx.Part('types/format/hls_memory_ms.part.tpl'),
-        x_format_sm=ctx.Part('types/format/hls_memory_sm.part.tpl'),
-        x_wrapeport=ctx.Part('types/wrapeport/hls_memory.part.tpl'),
-        x_wrapeconv=ctx.Part('types/wrapeconv/hls_memory.part.tpl'),
-        x_wrapipmap=ctx.Part('types/wrapipmap/hls_memory.part.tpl'),
-        x_wrapigmap=None,
-        x_tlogic=tlogic, x_tdata=tdata, x_taddr=taddr,
-        x_has_wr=bool(has_wr), x_has_rd=bool(has_rd),
-        x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
-TypeHlsMemory = ModuleContext(_TypeHlsMemory)
-
-def _TypeHlsBus(ctx, name, data_bits, addr_bits=32, size_bits=32):
-  # for ap_bus
-  # <name>_address     --ms-> req_addr
-  # <name>_req_din     --ms-> req_write
-  # <name>_size        --ms-> req_size
-  # <name>_dataout     --ms-> req_wdata
-  # <name>_req_full_n  <-sm-- req_ready
-  # <name>_req_write   --ms-> req_strobe
-  # <name>_datain      <-sm-- rsp_rdata
-  # <name>_rsp_empty_n <-sm-- rsp_ready
-  # <name>_rsp_read    --ms-> rsp_strobe
-  tdata = TypeUnsigned('{}Data'.format(name), width=data_bits)
-  taddr = TypeUnsigned('{}Addr'.format(name), width=addr_bits)
-  tsize = TypeUnsigned('{}Size'.format(name), width=size_bits)
-  tlogic = T('Logic', 'dfaccto')
-  return TypeC(name, x_is_hls_bus=True,
-        x_definition=ctx.Part('types/definition/hls_bus.part.tpl'),
-        x_format_ms=ctx.Part('types/format/hls_bus_ms.part.tpl'),
-        x_format_sm=ctx.Part('types/format/hls_bus_sm.part.tpl'),
-        x_wrapeport=ctx.Part('types/wrapeport/hls_bus.part.tpl'),
-        x_wrapeconv=ctx.Part('types/wrapeconv/hls_bus.part.tpl'),
-        x_wrapipmap=ctx.Part('types/wrapipmap/hls_bus.part.tpl'),
-        x_wrapigmap=None,
-        x_tlogic=tlogic, x_tdata=tdata, x_taddr=taddr, x_tsize=tsize,
-        x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
-TypeHlsBus = ModuleContext(_TypeHlsBus)
+  def TypeBus(self, name, data_bits, addr_bits=32, size_bits=32):
+    # for ap_bus
+    # <name>_address     --ms-> req_addr
+    # <name>_req_din     --ms-> req_write
+    # <name>_size        --ms-> req_size
+    # <name>_dataout     --ms-> req_wdata
+    # <name>_req_full_n  <-sm-- req_ready
+    # <name>_req_write   --ms-> req_strobe
+    # <name>_datain      <-sm-- rsp_rdata
+    # <name>_rsp_empty_n <-sm-- rsp_ready
+    # <name>_rsp_read    --ms-> rsp_strobe
+    tdata = Util.TypeUnsigned('{}Data'.format(name), width=data_bits)
+    taddr = Util.TypeUnsigned('{}Addr'.format(name), width=addr_bits)
+    tsize = Util.TypeUnsigned('{}Size'.format(name), width=size_bits)
+    return TypeC(name, x_is_hls_bus=True,
+          x_definition=self.Part('types/definition/hls_bus.part.tpl'),
+          x_format_ms=self.Part('types/format/hls_bus_ms.part.tpl'),
+          x_format_sm=self.Part('types/format/hls_bus_sm.part.tpl'),
+          x_wrapeport=self.Part('types/wrapeport/hls_bus.part.tpl'),
+          x_wrapeconv=self.Part('types/wrapeconv/hls_bus.part.tpl'),
+          x_wrapipmap=self.Part('types/wrapipmap/hls_bus.part.tpl'),
+          x_wrapigmap=None,
+          x_tlogic=Util.tlogic, x_tdata=tdata, x_taddr=taddr, x_tsize=tsize,
+          x_cnull=lambda t: Con('{}Null'.format(name), t, value=Lit({})))
 
 
 # for s_axilite

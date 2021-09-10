@@ -1,107 +1,85 @@
-library ieee;
-use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+{{>vhdl/dependencies.part.tpl}}
 
-{{#dependencies}}
-use work.{{identifier}};
-{{/dependencies}}
-use work.util.all;
-use work.AxiAddrMachine;
+use work.{{x_util.identifier}}.all;
 
-entity {{identifier}} is
-{{?generics}}
-  generic (
-{{# generics}}
-{{#  is_complex}}
-    {{identifier_ms}} : {{#is_scalar}}{{type.qualified_ms}}{{|is_scalar}}{{type.qualified_v_ms}} (0 to {{=size}}{{?is_literal}}{{=type}}{{=value}}{{*..x_format}}{{/value}}{{/type}}{{|is_literal}}{{qualified}}{{/is_literal}}{{/size}}-1){{/is_scalar}}{{?_last}}){{/_last}};
-    {{identifier_sm}} : {{#is_scalar}}{{type.qualified_sm}}{{|is_scalar}}{{type.qualified_v_sm}} (0 to {{=size}}{{?is_literal}}{{=type}}{{=value}}{{*..x_format}}{{/value}}{{/type}}{{|is_literal}}{{qualified}}{{/is_literal}}{{/size}}-1){{/is_scalar}}{{?_last}}){{/_last}};
-{{|  is_complex}}
-    {{identifier}} : {{#is_scalar}}{{type.qualified}}{{|is_scalar}}{{type.qualified_v}} (0 to {{=size}}{{?is_literal}}{{=type}}{{=value}}{{*..x_format}}{{/value}}{{/type}}{{|is_literal}}{{qualified}}{{/is_literal}}{{/size}}-1){{/is_scalar}}{{?_last}}){{/_last}};
-{{/  is_complex}}
-{{/ generics}}
-{{/generics}}
-{{?ports}}
-  port (
-{{# ports}}
-{{#  is_complex}}
-    {{identifier_ms}} : {{mode_ms}} {{#is_scalar}}{{type.qualified_ms}}{{|is_scalar}}{{type.qualified_v_ms}} (0 to {{=size}}{{?is_literal}}{{=type}}{{=value}}{{*..x_format}}{{/value}}{{/type}}{{|is_literal}}{{qualified}}{{/is_literal}}{{/size}}-1){{/is_scalar}};
-    {{identifier_sm}} : {{mode_sm}} {{#is_scalar}}{{type.qualified_sm}}{{|is_scalar}}{{type.qualified_v_sm}} (0 to {{=size}}{{?is_literal}}{{=type}}{{=value}}{{*..x_format}}{{/value}}{{/type}}{{|is_literal}}{{qualified}}{{/is_literal}}{{/size}}-1){{/is_scalar}}{{?_last}}){{/_last}};
-{{|  is_complex}}
-    {{identifier}} : {{mode}} {{#is_scalar}}{{type.qualified}}{{|is_scalar}}{{type.qualified_v}} (0 to {{=size}}{{?is_literal}}{{=type}}{{=value}}{{*..x_format}}{{/value}}{{/type}}{{|is_literal}}{{qualified}}{{/is_literal}}{{/size}}-1){{/is_scalar}}{{?_last}}){{/_last}};
-{{/  is_complex}}
-{{/ ports}}
-{{/ports}}
-end {{identifier}};
 
-architecture AxiReader of {{identifier}} is
+{{>vhdl/defentity.part.tpl}}
 
-  -- Map internal signals on templated signals
-  alias ai_sys is {{x_psys.identifier}};
-  alias ai_start is {{x_pi_start.identifier}};
-  alias ao_ready is {{x_po_ready.identifier}};
 
-{{^ x_pm_axiRd.type.x_is_axi}}
-  report "AxiRd is not an Axi type!"; severity failure;
-{{/ x_pm_axiRd.type.x_is_axi}}
-  alias am_axiRd_ms is {{x_pm_axiRd.identifier_ms}};
-  alias am_axiRd_sm is {{x_pm_axiRd.identifier_sm}};
-
-{{^ x_pm_axiStm.type.x_is_axi_stream}}
-  report "AxiStm is not an Axi stream type!"; severity failure;
-{{/ x_pm_axiStm.type.x_is_axi_stream}}
-  alias am_axiStm_ms is {{x_pm_axiStm.identifier_ms}};
-  alias am_axiStm_sm is {{x_pm_axiStm.identifier_sm}};
+architecture Reader of {{identifier}} is
 
   -- Config port (4 registers):
   --  Reg0: Start address low word
   --  Reg1: Start address high word
   --  Reg2: Transfer count
   --  Reg3: Maximum Burst length
-  alias as_regs_ms is {{x_ps_reg.identifier_ms}};
-  alias as_regs_sm is {{x_ps_reg.identifier_sm}};
 
-  alias ao_status is {{x_po_status.identifier}};
+  alias ag_FifoLogDepth is {{x_gdepth.identifier}};
 
-  signal ai_hold : std_logic;
+  -- Map internal signals on templated signals
+  alias ai_clk    is {{x_psys.identifier}}.clk;
+  alias ai_rst_n  is {{x_psys.identifier}}.rst_n;
+  alias ai_start  is {{x_pstart.identifier_ms}}.stb;
+  alias ao_ready  is {{x_pstart.identifier_sm}}.ack;
+  alias ai_hold   is {{x_phold.identifier}};
+  alias ao_axi_ms is {{x_paxi.identifier_ms}};
+  alias ai_axi_sm is {{x_paxi.identifier_sm}};
+  alias ao_stm_ms is {{x_pstm.identifier_ms}};
+  alias ai_stm_sm is {{x_pstm.identifier_sm}};
+  alias ai_reg_ms is {{x_preg.identifier_ms}};
+  alias ao_reg_sm is {{x_preg.identifier_sm}};
 
-  signal so_ready         : std_logic;
-  signal s_addrStart      : std_logic;
-  signal s_addrReady      : std_logic;
+  subtype at_AxiAddr is {{x_paxi.type.x_taddr.qualified}};
+  subtype at_AxiWordAddr is {{x_paxi.type.x_twaddr.qualified}};
+  subtype at_AxiLen is {{x_paxi.type.x_tlen.qualified}};
+
+  alias ac_AxiBurstIncr is {{x_paxi.type.x_tburst.x_cincr.qualified}};
+  alias ac_AxiSizeFull is {{x_paxi.type.x_csize.qualified}};
+  alias ac_AxiWordBound is {{x_paxi.type.x_cwbound.qualified}};
+
+  subtype at_RegData is {{x_preg.type.x_tdata.qualified}};
+
+  signal so_ready              : std_logic;
+  signal s_addrStart           : std_logic;
+  signal s_addrReady           : std_logic;
 
   -- Address State Machine
-  signal s_address        : ocaccel.t_AxiHbmWordAddr;
-  signal s_count          : user.t_RegData;
-  signal s_maxLen         : ocaccel.t_AxiHbmLen;
+  signal s_cfgAddr             : at_AxiWordAddr;
+  signal s_cfgCount            : at_RegData;
+  signal s_cfgMaxLen           : at_AxiLen;
+
+  signal s_arAddr              : at_AxiWordAddr;
+  signal s_arLen               : at_AxiLen;
+  signal s_arValid             : std_logic;
+  signal s_arReady             : std_logic;
 
   -- Burst Count Queue
-  signal s_queueBurstCount: ocaccel.t_AxiHbmLen;
-  signal s_queueBurstLast : std_logic;
-  signal s_queueValid     : std_logic;
-  signal s_queueReady     : std_logic;
+  signal s_queueBurstCount     : at_AxiLen;
+  signal s_queueBurstLast      : std_logic;
+  signal s_queueValid          : std_logic;
+  signal s_queueReady          : std_logic;
 
   -- Data State Machine
   type t_State is (Idle, ThruConsume, Thru, ThruWait);
-  signal s_state          : t_State;
-  signal s_burstCount     : ocaccel.t_AxiHbmLen;
-  signal s_burstLast      : std_logic;
-  signal so_mem_ms_rready : std_logic;
+  signal s_state               : t_State;
+  signal s_burstCount          : at_AxiLen;
+  signal s_burstLast           : std_logic;
+  signal so_axi_ms_rready      : std_logic;
 
   -- Control Registers
-  signal so_regs_sm_ready : std_logic;
-  signal s_regAdr         : unsigned(2*user.t_RegData'length-1 downto 0);
-  alias  a_regALo is s_regAdr(user.t_RegData'length-1 downto 0);
-  alias  a_regAHi is s_regAdr(2*user.t_RegData'length-1 downto user.t_RegData'length);
-  signal s_regCnt         : user.t_RegData;
-  signal s_regBst         : user.t_RegData;
+  signal so_reg_sm_ready       : std_logic;
+  signal s_regAdr              : unsigned(2*at_RegData'length-1 downto 0);
+  alias  a_regALo is s_regAdr(at_RegData'length-1 downto 0);
+  alias  a_regAHi is s_regAdr(2*at_RegData'length-1 downto at_RegData'length);
+  signal s_regCnt              : at_RegData;
+  signal s_regBst              : at_RegData;
 
   -- Status Output
-  signal s_addrStatus     : unsigned (7 downto 0);
-  signal s_stateEnc       : unsigned (2 downto 0);
+  signal s_status              : unsigned (19 downto 0);
+  signal s_addrStatus          : unsigned (7 downto 0);
+  signal s_stateEnc            : unsigned (2 downto 0);
 
 begin
-  -- Map internal signals on constants
-  ai_hold <= '0';
-
 
   s_addrStart <= so_ready and ai_start;
   so_ready <= s_addrReady and f_logic(s_state = Idle);
@@ -110,28 +88,36 @@ begin
   -----------------------------------------------------------------------------
   -- Address State Machine
   -----------------------------------------------------------------------------
-  am_axiRd_ms.arsize <= "101"; -- AXI_xx_ARSIZE and AXI__xx_AWSIZE signals are always 3'b101 (32-byte aligned)
-  am_axiRd_ms.arburst <= "01";
+  ao_axi_ms.araddr <= f_resizeLeft(s_arAddr, ao_axi_ms.araddr'length); -- word to byte address
+  ao_axi_ms.arlen <= s_arLen;
+  ao_axi_ms.arsize <= ac_AxiSizeFull;
+  ao_axi_ms.arburst <= ac_AxiBurstIncr;
+  ao_axi_ms.arvalid <= s_arValid;
+  s_arReady <= ai_axi_sm.arready;
 
-  s_address <= f_resizeLeft(s_regAdr, s_address'length);
-  s_count   <= s_regCnt;
-  s_maxLen  <= f_resize(s_regBst, s_maxLen'length);
-  i_addrMachine : entity work.AxiAddrMachine
+  s_cfgAddr  <= f_resizeLeft(s_regAdr, s_cfgAddr'length); -- byte to word address
+  s_cfgCount <= s_regCnt;
+  s_cfgMaxLen   <= f_resize(s_regBst, s_cfgMaxLen'length);
+  i_addrMachine : entity work.{{x_eamach.identifier}}
     generic map (
-      g_FIFOLogDepth => g_FIFOLogDepth)
+      g_WordAddrWidth => at_AxiWordAddr'length,
+      g_BurstLengthWidth => at_AxiLen'length,
+      g_BurstCountWidth => at_RegData'length,
+      g_Boundary => ac_AxiWordBound,
+      g_FIFOLogDepth => ag_FifoLogDepth)
     port map (
-      pi_clk             => ai_sys.clk,
-      pi_rst_n           => ai_sys.rst_n,
+      pi_clk             => ai_clk,
+      pi_rst_n           => ai_rst_n,
       pi_start           => s_addrStart,
       po_ready           => s_addrReady,
       pi_hold            => ai_hold,
-      pi_address         => s_address,
-      pi_count           => s_count,
-      pi_maxLen          => s_maxLen,
-      po_axiAAddr        => am_axiRd_ms.araddr,
-      po_axiALen         => am_axiRd_ms.arlen,
-      po_axiAValid       => am_axiRd_ms.arvalid,
-      pi_axiAReady       => am_axiRd_sm.arready,
+      pi_address         => s_cfgAddr,
+      pi_count           => s_cfgCount,
+      pi_maxLen          => s_cfgMaxLen,
+      po_axiAAddr        => s_arAddr,
+      po_axiALen         => s_arLen,
+      po_axiAValid       => s_arValid,
+      pi_axiAReady       => s_arReady,
       po_queueBurstCount => s_queueBurstCount,
       po_queueBurstLast  => s_queueBurstLast,
       po_queueValid      => s_queueValid,
@@ -142,43 +128,43 @@ begin
   -- Data State Machine
   -----------------------------------------------------------------------------
 
-  am_axiStm_ms.tdata <= am_axiRd_sm.rdata;
-  with s_state select am_axiStm_ms.tkeep <=
+  ao_stm_ms.tdata <= ai_axi_sm.rdata;
+  with s_state select ao_stm_ms.tkeep <=
     (others => '1')     when Thru,
     (others => '1')     when ThruConsume,
     (others => '0')     when others;
-  am_axiStm_ms.tlast <= f_logic(s_burstCount = to_unsigned(0, s_burstCount'length) and s_burstLast = '1');
-  with s_state select am_axiStm_ms.tvalid <=
-    am_axiRd_sm.rvalid    when Thru,
-    am_axiRd_sm.rvalid    when ThruConsume,
+  ao_stm_ms.tlast <= f_logic(s_burstCount = to_unsigned(0, s_burstCount'length) and s_burstLast = '1');
+  with s_state select ao_stm_ms.tvalid <=
+    ai_axi_sm.rvalid    when Thru,
+    ai_axi_sm.rvalid    when ThruConsume,
     '0'                 when others;
-  with s_state select so_mem_ms_rready <=
-    am_axiStm_sm.tready when Thru,
-    am_axiStm_sm.tready when ThruConsume,
+  with s_state select so_axi_ms_rready <=
+    ai_stm_sm.tready when Thru,
+    ai_stm_sm.tready when ThruConsume,
     '0'                 when others;
-  am_axiRd_ms.rready <= so_mem_ms_rready;
+  ao_axi_ms.rready <= so_axi_ms_rready;
   -- TODO-lw: handle rresp /= OKAY
 
   with s_state select s_queueReady <=
     '1' when ThruConsume,
     '0' when others;
 
-  process (ai_sys.clk)
+  process (ai_clk)
     variable v_beat : boolean; -- Data Channel Handshake
     variable v_bend : boolean; -- Last Data Channel Handshake in Burst
     variable v_blst : boolean; -- Last Burst
     variable v_qval : boolean; -- Queue Valid
   begin
-    if ai_sys.clk'event and ai_sys.clk = '1' then
-      v_beat := am_axiRd_sm.rvalid = '1' and
-                so_mem_ms_rready = '1';
+    if ai_clk'event and ai_clk = '1' then
+      v_beat := ai_axi_sm.rvalid = '1' and
+                so_axi_ms_rready = '1';
       v_bend := (s_burstCount = to_unsigned(0, s_burstCount'length)) and
-                am_axiRd_sm.rvalid = '1' and
-                so_mem_ms_rready = '1';
+                ai_axi_sm.rvalid = '1' and
+                so_axi_ms_rready = '1';
       v_blst := s_burstLast = '1';
       v_qval := s_queueValid = '1';
 
-      if ai_sys.rst_n = '0' then
+      if ai_rst_n = '0' then
         s_burstCount <= (others => '0');
         s_burstLast <= '0';
         s_state  <= Idle;
@@ -237,48 +223,49 @@ begin
   -----------------------------------------------------------------------------
   -- Register Access
   -----------------------------------------------------------------------------
-  as_regs_sm.ready <= so_regs_sm_ready;
-  process (ai_sys.clk)
-    variable v_portAddr : integer range 0 to 2**as_regs_ms.addr'length-1;
+  ao_reg_sm.ready <= so_reg_sm_ready;
+  process (ai_clk)
+    -- variable v_portAddr : integer range 0 to 2**ai_reg_ms.addr'length-1;
+    variable v_portAddr : integer range 0 to 4;
   begin
-    if ai_sys.clk'event and ai_sys.clk = '1' then
-      v_portAddr := to_integer(as_regs_ms.addr);
+    if ai_clk'event and ai_clk = '1' then
+      v_portAddr := to_integer(f_resize(ai_reg_ms.addr, 2));
 
-      if ai_sys.rst_n = '0' then
-        as_regs_sm.rddata <= (others => '0');
-        so_regs_sm_ready <= '0';
+      if ai_rst_n = '0' then
+        ao_reg_sm.rddata <= (others => '0');
+        so_reg_sm_ready <= '0';
         s_regAdr <= (others => '0');
         s_regCnt <= (others => '0');
         s_regBst <= (others => '0');
       else
-        if as_regs_ms.valid = '1' and so_regs_sm_ready = '0' then
-          so_regs_sm_ready <= '1';
+        if ai_reg_ms.valid = '1' and so_reg_sm_ready = '0' then
+          so_reg_sm_ready <= '1';
           case v_portAddr is
             when 0 =>
-              as_regs_sm.rddata <= a_regALo;
-              if as_regs_ms.wrnotrd = '1' then
-                a_regALo <= f_byteMux(as_regs_ms.wrstrb, a_regALo, as_regs_ms.wrdata);
+              ao_reg_sm.rddata <= a_regALo;
+              if ai_reg_ms.wrnotrd = '1' then
+                a_regALo <= f_byteMux(ai_reg_ms.wrstrb, a_regALo, ai_reg_ms.wrdata);
               end if;
             when 1 =>
-              as_regs_sm.rddata <= a_regAHi;
-              if as_regs_ms.wrnotrd = '1' then
-                a_regAHi <= f_byteMux(as_regs_ms.wrstrb, a_regAHi, as_regs_ms.wrdata);
+              ao_reg_sm.rddata <= a_regAHi;
+              if ai_reg_ms.wrnotrd = '1' then
+                a_regAHi <= f_byteMux(ai_reg_ms.wrstrb, a_regAHi, ai_reg_ms.wrdata);
               end if;
             when 2 =>
-              as_regs_sm.rddata <= s_regCnt;
-              if as_regs_ms.wrnotrd = '1' then
-                s_regCnt <= f_byteMux(as_regs_ms.wrstrb, s_regCnt, as_regs_ms.wrdata);
+              ao_reg_sm.rddata <= s_regCnt;
+              if ai_reg_ms.wrnotrd = '1' then
+                s_regCnt <= f_byteMux(ai_reg_ms.wrstrb, s_regCnt, ai_reg_ms.wrdata);
               end if;
             when 3 =>
-              as_regs_sm.rddata <= s_regBst;
-              if as_regs_ms.wrnotrd = '1' then
-                s_regBst <= f_byteMux(as_regs_ms.wrstrb, s_regBst, as_regs_ms.wrdata);
+              ao_reg_sm.rddata <= s_regBst;
+              if ai_reg_ms.wrnotrd = '1' then
+                s_regBst <= f_byteMux(ai_reg_ms.wrstrb, s_regBst, ai_reg_ms.wrdata);
               end if;
             when others =>
-              as_regs_sm.rddata <= (others => '0');
+              ao_reg_sm.rddata <= (others => '0');
           end case;
         else
-          so_regs_sm_ready <= '0';
+          so_reg_sm_ready <= '0';
         end if;
       end if;
     end if;
@@ -293,6 +280,6 @@ begin
     "001" when Thru,
     "011" when ThruConsume,
     "010" when ThruWait;
-  ao_status <= s_burstLast & s_stateEnc & f_resize(s_burstCount, 8) & s_addrStatus;
+  s_status <= s_burstLast & s_stateEnc & f_resize(s_burstCount, 8) & s_addrStatus;
 
-end AxiReader;
+end Reader;

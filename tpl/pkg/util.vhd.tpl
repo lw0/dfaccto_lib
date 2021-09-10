@@ -12,10 +12,12 @@ package {{identifier}} is
 
   function f_encode(v_vect : unsigned) return integer;
 
-  function f_resize(v_vector : unsigned; v_width : integer; v_offset : integer := 0) return unsigned;
-  function f_resizeVU(v_vector : std_logic_vector; v_width : integer; v_offset : integer := 0) return unsigned;
-  function f_resizeUV(v_vector : unsigned; v_width : integer; v_offset : integer := 0) return std_logic_vector;
-  function f_resizeLeft(v_vector : unsigned; v_width : integer; v_offset : integer := 0) return unsigned;
+  function f_resize(v_vector : unsigned; v_width : natural; v_offset : integer := 0) return unsigned;
+  function f_resizeVU(v_vector : std_logic_vector; v_width : natural; v_offset : integer := 0) return unsigned;
+  function f_resizeUV(v_vector : unsigned; v_width : natural; v_offset : integer := 0) return std_logic_vector;
+  function f_resizeLeft(v_vector : unsigned; v_width : natural; v_offset : integer := 0) return unsigned;
+
+  function f_saturate(v_vector : unsigned; v_width : natural) return unsigned;
 
   function f_clog2(v_value : natural) return positive;
 
@@ -26,6 +28,7 @@ package {{identifier}} is
   function f_xor(v_bits : unsigned) return std_logic;
 
   function f_byteMux(v_select : unsigned; v_data0 : unsigned; v_data1 : unsigned) return unsigned;
+
 
 end {{identifier}};
 
@@ -73,7 +76,7 @@ package body {{identifier}} is
     return v_result - v_vect'low;
   end f_encode;
 
-  function f_resize(v_vector : unsigned; v_width : integer; v_offset : integer := 0) return unsigned is
+  function f_resize(v_vector : unsigned; v_width : natural; v_offset : integer := 0) return unsigned is
     variable v_length : integer := v_vector'length;
     variable v_high : integer := v_vector'high;
     variable v_low : integer := v_vector'low;
@@ -90,17 +93,17 @@ package body {{identifier}} is
     return v_result;
   end f_resize;
 
-  function f_resizeVU(v_vector : std_logic_vector; v_width : integer; v_offset : integer := 0) return unsigned is
+  function f_resizeVU(v_vector : std_logic_vector; v_width : natural; v_offset : integer := 0) return unsigned is
   begin
     return f_resize(unsigned(v_vector), v_width, v_offset);
   end f_resizeVU;
 
-  function f_resizeUV(v_vector : unsigned; v_width : integer; v_offset : integer := 0) return std_logic_vector is
+  function f_resizeUV(v_vector : unsigned; v_width : natural; v_offset : integer := 0) return std_logic_vector is
   begin
     return std_logic_vector(f_resize(v_vector, v_width, v_offset));
   end f_resizeUV;
 
-  function f_resizeLeft(v_vector : unsigned; v_width : integer; v_offset : integer := 0) return unsigned is
+  function f_resizeLeft(v_vector : unsigned; v_width : natural; v_offset : integer := 0) return unsigned is
     variable v_length : integer := v_vector'length;
     variable v_high : integer := v_vector'high;
     variable v_low : integer := v_vector'low;
@@ -116,6 +119,22 @@ package body {{identifier}} is
     end if;
     return v_result;
   end f_resizeLeft;
+
+  function f_saturate(v_vector : unsigned; v_width : natural) return unsigned is
+    variable v_exceeds : boolean;
+    variable v_maximum : unsigned (v_vector'length-1 downto 0) := (others => '1');
+  begin
+    if v_width < v_vector'length then
+      v_exceeds := f_bool(f_or(f_resize(v_vector, v_vector'length - v_width, v_width)));
+    else
+      v_exceeds := false;
+    end if;
+    if v_exceeds then
+      return v_maximum;
+    else
+      return f_resize(v_vector, v_width);
+    end if;
+  end f_saturate;
 
   function f_clog2 (v_value : natural) return positive is
     variable v_count  : positive;

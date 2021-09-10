@@ -8,30 +8,31 @@ use work.{{x_util.identifier}}.all;
 
 architecture AxiWrMuxNoId of {{identifier}} is
 
-  alias ag_Count is {{x_gcount}};
+  alias ag_FifoLogDepth is {{x_gdepth.identifier}};
+  alias ag_Count is {{x_gcount.identifier}};
 
   alias ai_clk   is {{x_psys.identifier}}.clk;
   alias ai_rst_n is {{x_psys.identifier}}.rst_n;
 
-  subtype at_AxiAW_ms   is {{x_pm.type.x_tpart_aw.identifier_ms}};
-  subtype at_AxiAW_sm   is {{x_pm.type.x_tpart_aw.identifier_sm}};
-  subtype at_AxiAW_v_ms is {{x_pm.type.x_tpart_aw.identifier_v_ms}};
-  subtype at_AxiAW_v_sm is {{x_pm.type.x_tpart_aw.identifier_v_sm}};
-  subtype at_AxiW_ms    is {{x_pm.type.x_tpart_w.identifier_ms}};
-  subtype at_AxiW_sm    is {{x_pm.type.x_tpart_w.identifier_sm}};
-  subtype at_AxiW_v_ms  is {{x_pm.type.x_tpart_w.identifier_v_ms}};
-  subtype at_AxiW_v_sm  is {{x_pm.type.x_tpart_w.identifier_v_sm}};
-  subtype at_AxiB_ms    is {{x_pm.type.x_tpart_b.identifier_ms}};
-  subtype at_AxiB_sm    is {{x_pm.type.x_tpart_b.identifier_sm}};
-  subtype at_AxiB_v_ms  is {{x_pm.type.x_tpart_b.identifier_v_ms}};
-  subtype at_AxiB_v_sm  is {{x_pm.type.x_tpart_b.identifier_v_sm}};
+  subtype at_AxiAW_ms   is {{x_pm.type.x_tpart_aw.qualified_ms}};
+  subtype at_AxiAW_sm   is {{x_pm.type.x_tpart_aw.qualified_sm}};
+  subtype at_AxiAW_v_ms is {{x_pm.type.x_tpart_aw.qualified_v_ms}};
+  subtype at_AxiAW_v_sm is {{x_pm.type.x_tpart_aw.qualified_v_sm}};
+  subtype at_AxiW_ms    is {{x_pm.type.x_tpart_w.qualified_ms}};
+  subtype at_AxiW_sm    is {{x_pm.type.x_tpart_w.qualified_sm}};
+  subtype at_AxiW_v_ms  is {{x_pm.type.x_tpart_w.qualified_v_ms}};
+  subtype at_AxiW_v_sm  is {{x_pm.type.x_tpart_w.qualified_v_sm}};
+  subtype at_AxiB_ms    is {{x_pm.type.x_tpart_b.qualified_ms}};
+  subtype at_AxiB_sm    is {{x_pm.type.x_tpart_b.qualified_sm}};
+  subtype at_AxiB_v_ms  is {{x_pm.type.x_tpart_b.qualified_v_ms}};
+  subtype at_AxiB_v_sm  is {{x_pm.type.x_tpart_b.qualified_v_sm}};
 
-  alias ac_AxiAWNull_ms is {{x_pm.type.x_tpart_aw.x_cnull.identifier_ms}};
-  alias ac_AxiAWNull_sm is {{x_pm.type.x_tpart_aw.x_cnull.identifier_sm}};
-  alias ac_AxiWNull_ms  is {{x_pm.type.x_tpart_w.x_cnull.identifier_ms}};
-  alias ac_AxiWNull_sm  is {{x_pm.type.x_tpart_w.x_cnull.identifier_sm}};
-  alias ac_AxiBNull_ms  is {{x_pm.type.x_tpart_b.x_cnull.identifier_ms}};
-  alias ac_AxiBNull_sm  is {{x_pm.type.x_tpart_b.x_cnull.identifier_sm}};
+  alias ac_AxiAWNull_ms is {{x_pm.type.x_tpart_aw.x_cnull.qualified_ms}};
+  alias ac_AxiAWNull_sm is {{x_pm.type.x_tpart_aw.x_cnull.qualified_sm}};
+  alias ac_AxiWNull_ms  is {{x_pm.type.x_tpart_w.x_cnull.qualified_ms}};
+  alias ac_AxiWNull_sm  is {{x_pm.type.x_tpart_w.x_cnull.qualified_sm}};
+  alias ac_AxiBNull_ms  is {{x_pm.type.x_tpart_b.x_cnull.qualified_ms}};
+  alias ac_AxiBNull_sm  is {{x_pm.type.x_tpart_b.x_cnull.qualified_sm}};
 
   subtype t_PortVector  is unsigned (ag_Count-1 downto 0);
   subtype t_PortNumber  is unsigned (f_clog2(ag_Count)-1 downto 0);
@@ -127,8 +128,8 @@ begin
 {{/x_pm.type.x_tlast}}
   s_wValid  <= s_masterW_ms.wvalid;
   s_wReady  <= s_masterW_sm.wready;
-  s_bValid  <= s_masterW_sm.bvalid;
-  s_bReady  <= s_masterW_ms.bready;
+  s_bValid  <= s_masterB_sm.bvalid;
+  s_bReady  <= s_masterB_ms.bready;
 
   i_splits : for v_idx in 0 to ag_Count-1 generate
     i_split : entity work.{{x_esplit}}
@@ -143,7 +144,7 @@ begin
         {{x_esplit.x_pmb.identifier_ms}} => s_slavesB_ms(v_idx),
         {{x_esplit.x_pmb.identifier_sm}} => s_slavesB_sm(v_idx));
     s_awValidReq(v_idx) <= s_slavesAW_ms(v_idx).awvalid;
-  end i_splits;
+  end generate;
 
   -- Address Channel Arbiter:
   s_arbitRequest <= s_awValidReq;
@@ -190,8 +191,8 @@ begin
   a_barDoneW <= s_fifoWInValid and s_fifoWInReady;
   i_fifoW : entity work.{{x_efifo.identifier}}
     generic map (
-      g_DataWidth => c_PortNumberWidth,
-      g_LogDepth  => g_FIFOLogDepth)
+      g_DataWidth => t_PortNumber'length,
+      g_LogDepth  => ag_FifoLogDepth)
     port map (
       pi_clk      => ai_clk,
       pi_rst_n    => ai_rst_n,
@@ -205,15 +206,15 @@ begin
   -- Write Channel Switch
   s_switchWEnable <= s_fifoWOutValid;
   s_switchWSelect <= s_fifoWOutPort;
-  s_fifoWOutReady <= s_wLast and s_wValid and swReady;
-  process (s_switchWEnable, s_switchWSelect, s_slavesW_ms, si_masterW_sm)
+  s_fifoWOutReady <= s_wLast and s_wValid and s_wReady;
+  process (s_switchWEnable, s_switchWSelect, s_slavesW_ms, s_masterW_sm)
   begin
-    s_masterW_ms <= c_AxiWNull_ms;
+    s_masterW_ms <= ac_AxiWNull_ms;
     for v_idx in 0 to ag_Count-1 loop
-      s_slavesW_sm(v_idx) <= c_AxiWNull_sm;
+      s_slavesW_sm(v_idx) <= ac_AxiWNull_sm;
       if s_switchWEnable = '1' and v_idx = to_integer(s_switchWSelect) then
         s_masterW_ms <= s_slavesW_ms(v_idx);
-        s_slavesW_sm(v_idx) <= si_masterW_sm;
+        s_slavesW_sm(v_idx) <= s_masterW_sm;
       end if;
     end loop;
   end process;
@@ -223,8 +224,8 @@ begin
   a_barDoneB <= s_fifoBInValid and s_fifoBInReady;
   i_fifoB : entity work.{{x_efifo.identifier}}
     generic map (
-      g_DataWidth => c_PortNumberWidth,
-      g_LogDepth  => g_FIFOLogDepth)
+      g_DataWidth => t_PortNumber'length,
+      g_LogDepth  => ag_FifoLogDepth)
     port map (
       pi_clk      => ai_clk,
       pi_rst_n    => ai_rst_n,
@@ -241,9 +242,9 @@ begin
   s_fifoBOutReady <= s_bValid and s_bReady;
   process (s_switchBEnable, s_switchBSelect, s_slavesB_ms, s_masterB_sm)
   begin
-    s_masterB_ms <= c_AxiBNull_ms;
+    s_masterB_ms <= ac_AxiBNull_ms;
     for v_idx in 0 to ag_Count-1 loop
-      s_slavesB_sm(v_idx) <= c_AxiBNull_sm;
+      s_slavesB_sm(v_idx) <= ac_AxiBNull_sm;
       if s_switchBEnable = '1' and v_idx = to_integer(s_switchBSelect) then
         s_masterB_ms <= s_slavesB_ms(v_idx);
         s_slavesB_sm(v_idx) <= s_masterB_sm;

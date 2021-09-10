@@ -139,7 +139,7 @@
 {{? .type.x_has_b}}
 {{.x_wrapname}}_bready   <= {{.identifier_ms}}.bready;
 {{/ .type.x_has_b}}
-{{? .type.x_has_rd}}
+{{? .type.x_has_ar}}
 {{.x_wrapname}}_araddr   <= std_logic_vector({{.identifier_ms}}.araddr);
 {{?  .type.x_tlen}}
 {{.x_wrapname}}_arlen    <= std_logic_vector({{.identifier_ms}}.arlen);

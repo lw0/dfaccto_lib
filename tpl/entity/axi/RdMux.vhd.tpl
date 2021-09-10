@@ -8,25 +8,26 @@ use work.{{x_util.identifier}}.all;
 
 architecture RdMuxNoId of {{identifier}} is
 
+  alias ag_FifoLogDepth is {{x_gdepth.identifier}};
   alias ag_Count is {{x_gcount.identifier}};
 
   alias ai_clk   is {{x_psys.identifier}}.clk;
   alias ai_rst_n is {{x_psys.identifier}}.rst_n;
 
   -- Address Channel AR or AW:
-  subtype at_AxiAR_ms   is {{x_pm.type.x_tpart_ar.identifier_ms}};
-  subtype at_AxiAR_sm   is {{x_pm.type.x_tpart_ar.identifier_sm}};
-  subtype at_AxiAR_v_ms is {{x_pm.type.x_tpart_ar.identifier_v_ms}};
-  subtype at_AxiAR_v_sm is {{x_pm.type.x_tpart_ar.identifier_v_sm}};
-  subtype at_AxiR_ms    is {{x_pm.type.x_tpart_r.identifier_ms}};
-  subtype at_AxiR_sm    is {{x_pm.type.x_tpart_r.identifier_sm}};
-  subtype at_AxiR_v_ms  is {{x_pm.type.x_tpart_r.identifier_v_ms}};
-  subtype at_AxiR_v_sm  is {{x_pm.type.x_tpart_r.identifier_v_sm}};
+  subtype at_AxiAR_ms   is {{x_pm.type.x_tpart_ar.qualified_ms}};
+  subtype at_AxiAR_sm   is {{x_pm.type.x_tpart_ar.qualified_sm}};
+  subtype at_AxiAR_v_ms is {{x_pm.type.x_tpart_ar.qualified_v_ms}};
+  subtype at_AxiAR_v_sm is {{x_pm.type.x_tpart_ar.qualified_v_sm}};
+  subtype at_AxiR_ms    is {{x_pm.type.x_tpart_r.qualified_ms}};
+  subtype at_AxiR_sm    is {{x_pm.type.x_tpart_r.qualified_sm}};
+  subtype at_AxiR_v_ms  is {{x_pm.type.x_tpart_r.qualified_v_ms}};
+  subtype at_AxiR_v_sm  is {{x_pm.type.x_tpart_r.qualified_v_sm}};
 
-  alias ac_AxiARNull_ms is {{x_pm.type.x_tpart_ar.x_cnull.identifier_ms}};
-  alias ac_AxiARNull_sm is {{x_pm.type.x_tpart_ar.x_cnull.identifier_sm}};
-  alias ac_AxiRNull_ms  is {{x_pm.type.x_tpart_r.x_cnull.identifier_ms}};
-  alias ac_AxiRNull_sm  is {{x_pm.type.x_tpart_r.x_cnull.identifier_sm}};
+  alias ac_AxiARNull_ms is {{x_pm.type.x_tpart_ar.x_cnull.qualified_ms}};
+  alias ac_AxiARNull_sm is {{x_pm.type.x_tpart_ar.x_cnull.qualified_sm}};
+  alias ac_AxiRNull_ms  is {{x_pm.type.x_tpart_r.x_cnull.qualified_ms}};
+  alias ac_AxiRNull_sm  is {{x_pm.type.x_tpart_r.x_cnull.qualified_sm}};
 
 
   subtype t_PortVector  is unsigned (ag_Count-1 downto 0);
@@ -38,10 +39,10 @@ architecture RdMuxNoId of {{identifier}} is
   signal s_masterR_ms   : at_AxiR_ms;
   signal s_masterR_sm   : at_AxiR_sm;
 
-  signal s_slavesAR_od  : t_NativeAxiAR_v_ms(ag_Count-1 downto 0);
-  signal s_slavesAR_do  : t_NativeAxiAR_v_sm(ag_Count-1 downto 0);
-  signal s_slavesR_do   : t_NativeAxiR_v_ms(ag_Count-1 downto 0);
-  signal s_slavesR_od   : t_NativeAxiR_v_sm(ag_Count-1 downto 0);
+  signal s_slavesAR_ms  : at_AxiAR_v_ms(ag_Count-1 downto 0);
+  signal s_slavesAR_sm  : at_AxiAR_v_sm(ag_Count-1 downto 0);
+  signal s_slavesR_ms   : at_AxiR_v_ms(ag_Count-1 downto 0);
+  signal s_slavesR_sm   : at_AxiR_v_sm(ag_Count-1 downto 0);
 
   -- Shortcut Signals
   signal s_arValid : std_logic;
@@ -87,10 +88,10 @@ begin
   i_join : entity work.{{x_ejoin}}
     port map(
       {{x_ejoin.x_psys.identifier}} => {{x_psys.identifier}},
-      {{x_ejoin.x_psar.identifier_ms}} => s_masterAW_ms,
-      {{x_ejoin.x_psar.identifier_sm}} => s_masterAW_sm,
-      {{x_ejoin.x_psr.identifier_ms}} => s_masterW_ms,
-      {{x_ejoin.x_psr.identifier_sm}} => s_masterW_sm,
+      {{x_ejoin.x_psar.identifier_ms}} => s_masterAR_ms,
+      {{x_ejoin.x_psar.identifier_sm}} => s_masterAR_sm,
+      {{x_ejoin.x_psr.identifier_ms}} => s_masterR_ms,
+      {{x_ejoin.x_psr.identifier_sm}} => s_masterR_sm,
       {{x_ejoin.x_pmrd.identifier_ms}} => {{x_pm.identifier_ms}},
       {{x_ejoin.x_pmrd.identifier_sm}} => {{x_pm.identifier_sm}});
   s_arValid <= s_masterAR_ms.arvalid;
@@ -114,7 +115,7 @@ begin
         {{x_esplit.x_pmr.identifier_ms}} => s_slavesR_ms(v_idx),
         {{x_esplit.x_pmr.identifier_sm}} => s_slavesR_sm(v_idx));
     s_arValidReq(v_idx) <= s_slavesAR_ms(v_idx).arvalid;
-  end i_splits;
+  end generate;
 
 
   -- Address Channel Arbiter:
@@ -146,7 +147,7 @@ begin
   s_switchAEnable <= s_arbitValid and not a_barMaskA;
   s_switchASelect <= s_arbitPort;
   a_barDoneA <= s_arValid and s_arReady;
-  process (s_switchAEnable, s_switchASelect, s_slavesAR_ms, si_masterAR_sm)
+  process (s_switchAEnable, s_switchASelect, s_slavesAR_ms, s_masterAR_sm)
   begin
     s_masterAR_ms <= ac_AxiARNull_ms;
     for v_idx in 0 to ag_Count-1 loop
@@ -163,11 +164,11 @@ begin
   a_barDoneR <= s_fifoRInValid and s_fifoRInReady;
   i_fifoR : entity work.{{x_efifo.identifier}}
     generic map (
-      g_DataWidth => c_PortNumberWidth,
+      g_DataWidth => t_PortNumber'length,
       g_LogDepth  => g_FIFOLogDepth)
     port map (
-      pi_clk      => ai_sys.clk,
-      pi_rst_n    => ai_sys.rst_n,
+      pi_clk      => ai_clk,
+      pi_rst_n    => ai_rst_n,
       pi_inData   => s_arbitPort,
       pi_inValid  => s_fifoRInValid,
       po_inReady  => s_fifoRInReady,

@@ -254,7 +254,7 @@ begin
 {{/ x_psb.type.x_tbuser}}
 {{; ----- bvalid -----}}
 {{?  x_pmb.type.x_has_b}}
-  {{x_psb.identifier_sm}}.bvalid    <= {{x_pmb.identifier_sm}}.buser;
+  {{x_psb.identifier_sm}}.bvalid    <= {{x_pmb.identifier_sm}}.bvalid;
 {{|  x_pmb.type.x_has_b}}
   {{x_psb.identifier_sm}}.bvalid    <= {{=x_cbvalid}}{{>vhdl/putvalue.part.tpl}}{{|x_cbvalid}}{{x_psb.type.x_tlogic.x_cnull.qualified}}{{/x_cbvalid}};
 {{/  x_pmb.type.x_has_b}}

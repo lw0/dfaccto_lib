@@ -54,7 +54,7 @@ architecture CtrlRegDemux of {{identifier}} is
   constant c_DecodedAddrNull : t_DecodedAddr
             := (valid => false,
                 id => 0,
-                addr => c_RegAddrNull);
+                addr => ac_RegAddrNull);
 
   function f_decodeAddr(v_absAddr : at_AxiAddr) return t_DecodedAddr is
     -- variable v_idx : t_PortNumber;
@@ -85,7 +85,6 @@ architecture CtrlRegDemux of {{identifier}} is
 
   type t_State is (Idle, WriteInit, WriteWait, WriteAck, ReadInit, ReadWait, ReadAck);
   signal s_state : t_State;
-  signal s_portNumber : t_PortNumber;
 
   signal s_regAddr : t_DecodedAddr;
   signal s_regWrData : at_RegData;
@@ -165,7 +164,7 @@ begin
               s_state <= WriteAck;
             end if;
 
-          when WriteAck =>
+          when ReadAck =>
             if ai_axiRReady = '1' then
               if ai_axiAwValid = '1' and ai_axiWValid = '1' then
                 s_regAddr <= f_decodeAddr(ai_axiAwAddr);
@@ -225,7 +224,7 @@ begin
     ao_ports_ms(v_idx).wrstrb <= s_regWrStrb;
     ao_ports_ms(v_idx).wrnotrd <= s_regWrNotRd;
     ao_ports_ms(v_idx).valid <= s_regValid when s_regAddr.valid and s_regAddr.id = v_idx else '0';
-  end i_PortDemux;
+  end generate;
   -- absent registers always read as zero and ignore writes
   s_regRdData <= ai_ports_sm(s_regAddr.id).rddata when s_regAddr.valid else ac_RegDataNull;
   s_regReady <= ai_ports_sm(s_regAddr.id).ready when s_regAddr.valid else '1';

@@ -1,12 +1,10 @@
-Inc('dfaccto/utils.py', abs=True)
-
-Inc('dfaccto/base.py', abs=True)
+Inc('dfaccto/check.py', abs=True)
+Inc('dfaccto/util.py', abs=True)
 Inc('dfaccto/axi.py', abs=True)
+Inc('dfaccto/reg.py', abs=True)
 Inc('dfaccto/event.py', abs=True)
 Inc('dfaccto/hls.py', abs=True)
-Inc('dfaccto/reg.py', abs=True)
 
-Inc('dfaccto/entaxi.py', abs=True)
 
 
 # p=Pkg('builtin')
